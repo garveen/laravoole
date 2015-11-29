@@ -32,6 +32,12 @@ In .env , use LARAVOOLE_* to config Laravoole.
 
  LARAVOOLE_PID_FILE=/path/to/laravoole.pid
 
+###deal_with_public
+
+Use this *ONLY* when developing
+
+ LARAVOOLE_DEAL_WITH_PUBLIC=true
+
 ###Swoole
 
 Example:

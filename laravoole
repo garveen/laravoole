@@ -40,7 +40,7 @@ function main($argc, $argv)
             $config = unserialize($input);
             extract($config);
 
-            $serv = new Laravoole\Server($host, $port, $root_dir, $pid_file, $settings);
+            $serv = new Laravoole\Server($host, $port, $root_dir, $pid_file, $deal_with_public, $settings);
 
             $serv->start();
         }
@@ -196,6 +196,7 @@ function start()
 
     $host = env('LARAVOOLE_HOST', '127.0.0.1');
     $port = env('LARAVOOLE_PORT', 9050);
+    $deal_with_public = env('LARAVOOLE_DEAL_WITH_PUBLIC', false);
     $pid_file = getPidFile();
 
     $config = [
@@ -203,6 +204,7 @@ function start()
         'port' => $port,
         'pid_file' => $pid_file,
         'root_dir' => $root_dir,
+        'deal_with_public' => $deal_with_public,
         'settings' => $settings,
     ];
 

@@ -14,12 +14,15 @@ class Server
     protected $laravel_kernel;
     protected $pid_file;
     protected $root_dir;
+    protected $deal_with_public;
+    protected $public_path;
 
-    public function __construct($host, $port, $root_dir, $pid_file, $params = [])
+    public function __construct($host, $port, $root_dir, $pid_file, $deal_with_public, $params = [])
     {
         $this->swoole_http_server = new swoole_http_server($host, $port);
         $this->pid_file = $pid_file;
         $this->root_dir = $root_dir;
+        $this->deal_with_public = $deal_with_public;
 
         if (!empty($params)) {
             $this->swoole_http_server->set($params);
@@ -33,6 +36,8 @@ class Server
         $this->swoole_http_server->on('shutdown', [$this, 'onServerShutdown']);
         $this->swoole_http_server->on('WorkerStart', [$this, 'onWorkerStart']);
         $this->swoole_http_server->on('request', [$this, 'onRequest']);
+
+        require(__DIR__ . '/mime.php');
 
         $this->swoole_http_server->start();
     }
@@ -58,11 +63,18 @@ class Server
         $app = require $this->root_dir . '/bootstrap/app.php';
         $this->laravel_kernel = $app->make(Kernel::class);
 
+        $this->public_path = public_path();
+
         IlluminateRequest::enableHttpMethodParameterOverride();
     }
 
     public function onRequest($request, $response)
     {
+        if ($this->deal_with_public) {
+            if ($this->dealWithPublic($request, $response)) {
+                return;
+            }
+        }
         $illuminate_request = $this->dealWithRequest($request);
         $illuminate_response = $this->laravel_kernel->handle($illuminate_request);
         $this->dealWithResponse($response, $illuminate_response);
@@ -128,5 +140,24 @@ class Server
         $content = $illuminate_response->getContent();
         // send content & close
         $response->end($content);
+    }
+
+    private function dealWithPublic($request, $response)
+    {
+        $uri = $request->server['request_uri'];
+        $file = realpath($this->public_path . $uri);
+        if (is_file($file)) {
+            if (!strncasecmp($file, $uri, strlen($this->public_path))) {
+                $response->status(403);
+            } else {
+                $response->header('Content-Type', get_mime_type($file));
+                $response->sendfile($file);
+            }
+            return true;
+
+        } else {
+        }
+        return false;
+
     }
 }
