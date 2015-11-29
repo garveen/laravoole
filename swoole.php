@@ -85,7 +85,7 @@ class Server
         foreach ($header as $key => $value) {
             $new_header['http_' . $key] = $value;
         }
-        $server = array_merge($server, $header);
+        $server = array_merge($server, $new_header);
 
         $new_server = [];
         // swoole has changed all keys to lower case

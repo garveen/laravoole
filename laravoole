@@ -64,7 +64,7 @@ function main($argc, $argv)
                     usleep(100000);
                     $time++;
                 }
-                if ($time > 10) {
+                if ($time > 100) {
                     echo 'timeout' . PHP_EOL;
                     exit(1);
                 }
