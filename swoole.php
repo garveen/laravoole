@@ -1,6 +1,8 @@
 <?php
 namespace Laravoole;
 
+use ErrorException;
+
 use Illuminate\Http\Request as IlluminateRequest;
 use Illuminate\Contracts\Http\Kernel;
 
@@ -73,11 +75,18 @@ class Server
                 return;
             }
         }
-        $illuminate_request = $this->dealWithRequest($request);
-        $illuminate_response = $this->laravel_kernel->handle($illuminate_request);
-        $this->dealWithResponse($response, $illuminate_response);
+        try {
+            $illuminate_request = $this->dealWithRequest($request);
+            $illuminate_response = $this->laravel_kernel->handle($illuminate_request);
+            $this->dealWithResponse($response, $illuminate_response);
 
-        $this->laravel_kernel->terminate($illuminate_request, $illuminate_response);
+        } catch (ErrorException $e) {
+            if (strncmp($e->getMessage(), 'swoole_', 7) === 0) {
+                fwrite(STDOUT, $e->getFile() . '(' . $e->getLine() . '): ' . $e->getMessage() . PHP_EOL);
+            }
+        } finally {
+            $this->laravel_kernel->terminate($illuminate_request, $illuminate_response);
+        }
 
     }
 
