@@ -17,6 +17,8 @@ class Server
     protected $root_dir;
     protected $deal_with_public;
     protected $public_path;
+    protected $gzip;
+    protected $gzip_min_length;
 
     public function __construct($config, $swoole_settings = [])
     {
@@ -24,6 +26,8 @@ class Server
         $this->pid_file = $config['pid_file'];
         $this->root_dir = $config['root_dir'];
         $this->deal_with_public = $config['deal_with_public'];
+        $this->gzip = $config['gzip'];
+        $this->gzip_min_length = $config['gzip_min_length'];
 
         if (!empty($swoole_settings)) {
             $this->swoole_http_server->set($swoole_settings);
@@ -78,7 +82,11 @@ class Server
         try {
             $illuminate_request = $this->dealWithRequest($request);
             $illuminate_response = $this->laravel_kernel->handle($illuminate_request);
-            $this->dealWithResponse($response, $illuminate_response);
+
+            // Is gzip enabled and the client accept it?
+            $accept_gzip = $this->gzip && isset($request->header['accept-encoding']) && stripos($request->header['accept-encoding'], 'gzip') !== false;
+
+            $this->dealWithResponse($response, $illuminate_response, $accept_gzip);
 
         } catch (ErrorException $e) {
             if (strncmp($e->getMessage(), 'swoole_', 7) === 0) {
@@ -120,7 +128,7 @@ class Server
         return $illuminate_request;
     }
 
-    private function dealWithResponse($response, $illuminate_response)
+    private function dealWithResponse($response, $illuminate_response, $accept_gzip)
     {
         // status
         $response->status($illuminate_response->getStatusCode());
@@ -144,6 +152,15 @@ class Server
         }
         // content
         $content = $illuminate_response->getContent();
+
+        // check gzip
+        if($accept_gzip && isset($response->header['Content-Type'])) {
+            $mime = $response->header['Content-Type'];
+            if(strlen($content) > $this->gzip_min_length && is_mime_gzip($mime)) {
+                $response->gzip($this->gzip);
+            }
+        }
+
         // send content & close
         $response->end($content);
     }

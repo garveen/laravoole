@@ -197,6 +197,8 @@ function start()
             'pid_file' => getPidFile(),
             'root_dir' => base_path(),
             'deal_with_public' => env('LARAVOOLE_DEAL_WITH_PUBLIC', false),
+            'gzip' => env('LARAVOOLE_GZIP', 1),
+            'gzip_min_length' => env('LARAVOOLE_GZIP_MIN_LENGTH', 1024),
         ],
         'swoole_settings' => $settings,
     ];

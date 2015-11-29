@@ -66,3 +66,18 @@ function get_mime_type($filename)
         return 'application/octet-stream';
     }
 }
+
+function is_mime_gzip($mime) {
+    static $mimes = [
+        'text/plain' => true,
+        'text/html' => true,
+        'text/css' => true,
+        'application/javascript' => true,
+        'application/json' => true,
+        'application/xml' => true,
+    ];
+    if($pos = strpos($mime, ';')) {
+        $mime = substr($mime, 0, $pos);
+    }
+    return isset($mimes[strtolower($mime)]);
+}
