@@ -1,0 +1,17 @@
+{
+    "name": "acabin/laravoole",
+    "description": "Laravel & Swoole",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Gavin",
+            "email": "acabin@live.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.9",
+        "ext-swoole": ">=1.7.19"
+    },
+    "bin": ["laravoole"]
+}
+

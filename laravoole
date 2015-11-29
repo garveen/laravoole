@@ -1,0 +1,213 @@
+#!/usr/bin/env php
+<?php
+
+$composer_installed = false;
+
+foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.php', __DIR__ . '/vendor/autoload.php') as $file) {
+    if (file_exists($file)) {
+        $composer_installed = $file;
+
+        break;
+    }
+}
+
+if ($composer_installed === false) {
+    fwrite(STDERR,
+        'You need to set up the project dependencies using the following commands:' . PHP_EOL .
+        'wget http://getcomposer.org/composer.phar' . PHP_EOL .
+        'php composer.phar install' . PHP_EOL
+    );
+
+    die(1);
+}
+
+define('COMPOSER_INSTALLED', $composer_installed);
+
+main($argc, $argv);
+
+function main($argc, $argv)
+{
+    if ($argc <= 1) {
+        if (posix_isatty(STDIN)) {
+            echo 'Laravoole by Garveen' . PHP_EOL;
+            echo  PHP_EOL;
+            echo 'Usage:' . PHP_EOL;
+            echo ' laravoole start | stop | reload | restart | quit' . PHP_EOL;
+            echo  PHP_EOL;
+        } else {
+            $input = file_get_contents('php://stdin');
+            require __DIR__ . '/swoole.php';
+            $config = unserialize($input);
+            extract($config);
+
+            $serv = new Laravoole\Server($host, $port, $root_dir, $pid_file, $settings);
+
+            $serv->start();
+        }
+    } else {
+
+        require COMPOSER_INSTALLED;
+
+        $app = require dirname(COMPOSER_INSTALLED) . '/../bootstrap/app.php';
+
+        $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+        $kernel->bootstrap();
+
+        switch ($argv[1]) {
+            case 'start':
+                start();
+                break;
+            case 'restart':
+                $pid = sendSignal(SIGTERM);
+                $time = 0;
+                while (posix_getpgid($pid) && $time <= 10) {
+                    usleep(100000);
+                    $time++;
+                }
+                if ($time > 10) {
+                    echo 'timeout' . PHP_EOL;
+                    exit(1);
+                }
+                start();
+                break;
+            case 'stop':
+            case 'quit':
+            case 'reload':
+            case 'reload_task':
+
+                $map = [
+                    'stop' => SIGTERM,
+                    'quit' => SIGQUIT,
+                    'reload' => SIGUSR1,
+                    'reload_task' => SIGUSR2,
+                ];
+                sendSignal($map[$argv[1]]);
+                break;
+
+        }
+    }
+}
+
+function sendSignal($sig)
+{
+    if ($pid = getPid()) {
+
+        posix_kill($pid, $sig);
+    } else {
+
+        echo "not running!" . PHP_EOL;
+        exit(1);
+    }
+}
+function getPid()
+{
+
+    $pid_file = getPidFile();
+    if (file_exists($pid_file)) {
+        $pid = file_get_contents($pid_file);
+        if (posix_getpgid($pid)) {
+            return $pid;
+        } else {
+            unlink($pid_file);
+        }
+    }
+    return false;
+}
+
+function getPidFile()
+{
+    static $pid_file = false;
+    if ($pid_file === false) {
+
+        $app = app();
+        $pid_file = env('LARAVOOLE_PID_FILE', $app->storagePath() . '/logs/swoole.pid');
+    }
+    return $pid_file;
+
+}
+function start()
+{
+    if (getPid()) {
+        echo 'already running' . PHP_EOL;
+        exit(1);
+    }
+    //boot
+    $app = app();
+    $root_dir = base_path();
+
+    // http://wiki.swoole.com/wiki/page/274.html
+    $params = [
+        'reactor_num',
+        'worker_num',
+        'max_request',
+        'max_conn',
+        'task_worker_num',
+        'task_ipc_mode',
+        'task_max_request',
+        'task_tmpdir',
+        'dispatch_mode',
+        'message_queue_key',
+        'daemonize',
+        'backlog',
+        'log_file',
+        'heartbeat_check_interval',
+        'heartbeat_idle_time',
+        'open_eof_check',
+        'open_eof_split',
+        'package_eof',
+        'open_length_check',
+        'package_length_type',
+        'package_max_length',
+        'open_cpu_affinity',
+        'cpu_affinity_ignore',
+        'open_tcp_nodelay',
+        'tcp_defer_accept',
+        'ssl_cert_file',
+        'ssl_method',
+        'user',
+        'group',
+        'chroot',
+        'pipe_buffer_size',
+        'buffer_output_size',
+        'enable_unsafe_event',
+        'discard_timeout_request',
+        'enable_reuse_port',
+    ];
+
+    $settings = [];
+    foreach ($params as $param) {
+        $key = 'LARAVOOLE_' . strtoupper($param);
+        $value = env($key);
+        if ($value !== null) {
+            $settings[$param] = $value;
+        }
+    }
+
+    $defaults = [
+        'log_file' => function () use ($app) {return $app->storagePath() . '/logs/swoole.log';},
+        'daemonize' => 1,
+        'max_request' => 2000,
+    ];
+    foreach ($defaults as $key => $value) {
+        if (!isset($settings[$key])) {
+            $settings[$key] = value($value);
+        }
+    }
+
+    $host = env('LARAVOOLE_HOST', '127.0.0.1');
+    $port = env('LARAVOOLE_PORT', 9050);
+    $pid_file = getPidFile();
+
+    $config = [
+        'host' => $host,
+        'port' => $port,
+        'pid_file' => $pid_file,
+        'root_dir' => $root_dir,
+        'settings' => $settings,
+    ];
+
+    $handle = popen(__FILE__, 'w');
+    fwrite($handle, serialize($config));
+    fclose($handle);
+
+}
