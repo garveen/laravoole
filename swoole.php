@@ -2,7 +2,6 @@
 namespace Laravoole;
 
 use Illuminate\Http\Request as IlluminateRequest;
-use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 use Illuminate\Contracts\Http\Kernel;
 
 use swoole_http_server;
@@ -37,7 +36,7 @@ class Server
         $this->swoole_http_server->on('WorkerStart', [$this, 'onWorkerStart']);
         $this->swoole_http_server->on('request', [$this, 'onRequest']);
 
-        require(__DIR__ . '/mime.php');
+        require __DIR__ . '/mime.php';
 
         $this->swoole_http_server->start();
     }
@@ -65,7 +64,6 @@ class Server
 
         $this->public_path = public_path();
 
-        IlluminateRequest::enableHttpMethodParameterOverride();
     }
 
     public function onRequest($request, $response)
@@ -80,6 +78,7 @@ class Server
         $this->dealWithResponse($response, $illuminate_response);
 
         $this->laravel_kernel->terminate($illuminate_request, $illuminate_response);
+
     }
 
     private function dealWithRequest($request)
@@ -107,9 +106,7 @@ class Server
 
         $content = $request->rawContent() ?: null;
 
-        $illuminate_request = IlluminateRequest::createFromBase(
-            new SymfonyRequest($get, $post, []/* attributes */, $cookie, $files, $new_server, $content)
-        );
+        $illuminate_request = new IlluminateRequest($get, $post, []/* attributes */, $cookie, $files, $new_server, $content);
 
         return $illuminate_request;
     }
@@ -126,7 +123,7 @@ class Server
         }
         // cookies
         foreach ($illuminate_response->headers->getCookies() as $cookie) {
-            $response->cookie(
+            $response->rawcookie(
                 $cookie->getName(),
                 $cookie->getValue(),
                 $cookie->getExpiresTime(),
@@ -149,6 +146,7 @@ class Server
         if (is_file($file)) {
             if (!strncasecmp($file, $uri, strlen($this->public_path))) {
                 $response->status(403);
+                $response->end();
             } else {
                 $response->header('Content-Type', get_mime_type($file));
                 $response->sendfile($file);
