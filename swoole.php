@@ -18,15 +18,15 @@ class Server
     protected $deal_with_public;
     protected $public_path;
 
-    public function __construct($host, $port, $root_dir, $pid_file, $deal_with_public, $params = [])
+    public function __construct($config, $swoole_settings = [])
     {
-        $this->swoole_http_server = new swoole_http_server($host, $port);
-        $this->pid_file = $pid_file;
-        $this->root_dir = $root_dir;
-        $this->deal_with_public = $deal_with_public;
+        $this->swoole_http_server = new swoole_http_server($config['host'], $config['port']);
+        $this->pid_file = $config['pid_file'];
+        $this->root_dir = $config['root_dir'];
+        $this->deal_with_public = $config['deal_with_public'];
 
-        if (!empty($params)) {
-            $this->swoole_http_server->set($params);
+        if (!empty($swoole_settings)) {
+            $this->swoole_http_server->set($swoole_settings);
         }
 
     }

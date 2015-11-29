@@ -37,10 +37,9 @@ function main($argc, $argv)
         } else {
             $input = file_get_contents('php://stdin');
             require __DIR__ . '/swoole.php';
-            $config = unserialize($input);
-            extract($config);
+            $construct_config = unserialize($input);
 
-            $serv = new Laravoole\Server($host, $port, $root_dir, $pid_file, $deal_with_public, $settings);
+            $serv = new Laravoole\Server($construct_config['config'], $construct_config['swoole_settings']);
 
             $serv->start();
         }
@@ -131,9 +130,6 @@ function start()
         echo 'already running' . PHP_EOL;
         exit(1);
     }
-    //boot
-    $app = app();
-    $root_dir = base_path();
 
     // http://wiki.swoole.com/wiki/page/274.html
     $params = [
@@ -184,7 +180,7 @@ function start()
     }
 
     $defaults = [
-        'log_file' => function () use ($app) {return $app->storagePath() . '/logs/swoole.log';},
+        'log_file' => function () {return app()->storagePath() . '/logs/swoole.log';},
         'daemonize' => 1,
         'max_request' => 2000,
     ];
@@ -194,22 +190,19 @@ function start()
         }
     }
 
-    $host = env('LARAVOOLE_HOST', '127.0.0.1');
-    $port = env('LARAVOOLE_PORT', 9050);
-    $deal_with_public = env('LARAVOOLE_DEAL_WITH_PUBLIC', false);
-    $pid_file = getPidFile();
-
-    $config = [
-        'host' => $host,
-        'port' => $port,
-        'pid_file' => $pid_file,
-        'root_dir' => $root_dir,
-        'deal_with_public' => $deal_with_public,
-        'settings' => $settings,
+    $construct_config = [
+        'config' => [
+            'host' => env('LARAVOOLE_HOST', '127.0.0.1'),
+            'port' => env('LARAVOOLE_PORT', 9050),
+            'pid_file' => getPidFile(),
+            'root_dir' => base_path(),
+            'deal_with_public' => env('LARAVOOLE_DEAL_WITH_PUBLIC', false),
+        ],
+        'swoole_settings' => $settings,
     ];
 
     $handle = popen(__FILE__, 'w');
-    fwrite($handle, serialize($config));
+    fwrite($handle, serialize($construct_config));
     fclose($handle);
 
 }
