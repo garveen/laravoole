@@ -1,6 +1,8 @@
 {
     "name": "acabin/laravoole",
     "description": "Laravel & Swoole",
+    "type": "library",
+    "keywords": ["laravel","swoole"],
     "license": "MIT",
     "authors": [
         {
