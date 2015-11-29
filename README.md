@@ -58,8 +58,8 @@ Default host is 127.0.0.1:9050
 
 See Swoole's document:
 
-[Chinese](http://wiki.swoole.com/wiki/page/274.html)
+[简体中文](http://wiki.swoole.com/wiki/page/274.html)
 
 [English](https://cdn.rawgit.com/tchiotludo/swoole-ide-helper/dd73ce0dd949870daebbf3e8fee64361858422a1/docs/classes/swoole_server.html#method_set)
 
-[MIT](LICENSE)
+[MIT](LICENSE) License
