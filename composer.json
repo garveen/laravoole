@@ -10,7 +10,9 @@
     ],
     "require": {
         "php": ">=5.5.9",
-        "ext-swoole": ">=1.7.19"
+        "laravel/framework": "5.1.*",
+        "ext-swoole": ">=1.7.19",
+        "ext-posix": "*"
     },
     "bin": ["laravoole"]
 }
