@@ -19,6 +19,7 @@ class Server
     protected $public_path;
     protected $gzip;
     protected $gzip_min_length;
+    protected $_SERVER;
 
     public function __construct($config, $swoole_settings = [])
     {
@@ -63,6 +64,7 @@ class Server
 
     public function onWorkerStart($serv, $worker_id)
     {
+        $this->_SERVER = $_SERVER;
         // bootstrap laravel here to enable reload
         require $this->root_dir . '/bootstrap/autoload.php';
         $app = require $this->root_dir . '/bootstrap/app.php';
@@ -120,6 +122,9 @@ class Server
         foreach ($server as $key => $value) {
             $new_server[strtoupper($key)] = $value;
         }
+
+        // override $_SERVER, for many packages use the raw variable
+        $_SERVER = array_merge($this->_SERVER, $new_server);
 
         $content = $request->rawContent() ?: null;
 
