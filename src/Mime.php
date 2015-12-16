@@ -67,7 +67,8 @@ function get_mime_type($filename)
     }
 }
 
-function is_mime_gzip($mime) {
+function is_mime_gzip($mime)
+{
     static $mimes = [
         'text/plain' => true,
         'text/html' => true,
@@ -76,7 +77,7 @@ function is_mime_gzip($mime) {
         'application/json' => true,
         'application/xml' => true,
     ];
-    if($pos = strpos($mime, ';')) {
+    if ($pos = strpos($mime, ';')) {
         $mime = substr($mime, 0, $pos);
     }
     return isset($mimes[strtolower($mime)]);

@@ -16,6 +16,13 @@
         "ext-swoole": ">=1.7.19",
         "ext-posix": "*"
     },
-    "bin": ["laravoole"]
+    "bin": ["laravoole"],
+    "autoload": {
+        "psr-0": {
+            "Laravoole": "src/"
+        }
+
+
+    }
 }
 

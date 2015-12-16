@@ -36,12 +36,22 @@ function main($argc, $argv)
             echo  PHP_EOL;
         } else {
             $input = file_get_contents('php://stdin');
-            require __DIR__ . '/swoole.php';
+            spl_autoload_register(function($class) {
+                if(is_file($file = __DIR__ . '/src/' . substr($class, 10) . '.php')) {
+                    require $file;
+                } else {
+                    throw new Exception("file not found", 1);
+
+                }
+            });
             $construct_config = unserialize($input);
 
-            $serv = new Laravoole\Server($construct_config['config'], $construct_config['swoole_settings']);
+            $server = "Laravoole\\{$construct_config['config']['mode']}";
 
-            $serv->start();
+            // pass autoload_function for unregister it
+            $server::init($construct_config['config'], $construct_config['swoole_settings']);
+            // require 'move_uploaded_file.php';
+            $server::start();
         }
     } else {
 
@@ -199,11 +209,13 @@ function start()
             'deal_with_public' => env('LARAVOOLE_DEAL_WITH_PUBLIC', false),
             'gzip' => env('LARAVOOLE_GZIP', 1),
             'gzip_min_length' => env('LARAVOOLE_GZIP_MIN_LENGTH', 1024),
+            'mode' => env('LARAVOOLE_MODE', 'Http'),
+            'cache_dir' => env('LARAVOOLE_CACHE_DIR', app()->storagePath() . '/laravoole_cache'),
         ],
         'swoole_settings' => $settings,
     ];
 
-    $handle = popen(__FILE__, 'w');
+    $handle = popen('/usr/bin/env php ' .__FILE__, 'w');
     fwrite($handle, serialize($construct_config));
     fclose($handle);
 
