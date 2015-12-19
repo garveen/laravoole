@@ -214,7 +214,7 @@ class FastCGI extends Http
      */
     public static function response($req, $out)
     {
-        $cs = $chunksize = 8192;
+        $chunksize = 65520;
         do {
             if (strlen($out) > $chunksize) {
                 while (($ol = strlen($out)) > 0) {
@@ -243,13 +243,15 @@ class FastCGI extends Http
      */
     public static function sendChunk($req, $chunk)
     {
-        return static::$server->send($req->fd,
-            "\x01" // protocol version
-             . "\x06" // record type (STDOUT)
-             . pack('nn', $req->id, strlen($chunk)) // id, content length
-             . "\x00" // padding length
-             . "\x00" // reserved
-        ) && static::$server->send($req->fd, $chunk); // content
+        $paddingLength = 8 - strlen($chunk) % 8;
+        $payload = "\x01" // protocol version
+         . "\x06" // record type (STDOUT)
+         . pack('nnC', $req->id, strlen($chunk), $paddingLength) // id, content length, padding length
+         . "\x00" // reserved
+         . $chunk // content
+         . str_repeat("\0", $paddingLength);
+
+        return static::$server->send($req->fd, $payload);
     }
 
     /**
@@ -261,17 +263,18 @@ class FastCGI extends Http
      */
     public static function endRequest($req, $appStatus = 0, $protoStatus = 0)
     {
-        $c = pack('NC', $appStatus, $protoStatus) // app status, protocol status
+        $content = pack('NC', $appStatus, $protoStatus) // app status, protocol status
          . "\x00\x00\x00";
+        $paddingLength = 8 - strlen($content) % 8;
 
-        static::$server->send($req->fd,
-            "\x01" // protocol version
-             . "\x03" // record type (END_REQUEST)
-             . pack('nn', $req->id, strlen($c)) // id, content length
-             . "\x00" // padding length
-             . "\x00" // reserved
-             . $c // content
-        );
+        $payload = "\x01" // protocol version
+         . "\x03" // record type (END_REQUEST)
+         . pack('nnC', $req->id, strlen($content), $paddingLength) // id, content length, padding length
+         . "\x00" // reserved
+         . $content // content
+         . str_repeat("\0", $paddingLength);
+
+        static::$server->send($req->fd, $payload);
         $req->destoryTempFiles();
         unset(static::$requests[$req->id]);
 
