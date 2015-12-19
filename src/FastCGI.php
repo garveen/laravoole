@@ -41,7 +41,7 @@ class FastCGI extends Http
     const STATE_PADDING = 2;
 
     static $requests = [];
-    static $buffs = [];
+    static $connections = [];
 
     public static function init($config, $swoole_settings)
     {
@@ -61,6 +61,7 @@ class FastCGI extends Http
         static::$server->on('receive', [static::class, 'onReceive']);
         static::$server->on('shutdown', [static::class, 'onServerShutdown']);
         static::$server->on('WorkerStart', [static::class, 'onWorkerStart']);
+        static::$server->on('close', [static::class, 'onClose']);
 
         require __DIR__ . '/Mime.php';
 
@@ -96,37 +97,36 @@ class FastCGI extends Http
 
     public static function onReceive($serv, $fd, $from_id, $data)
     {
-        var_dump('received: ' . strlen($data));
-        if (!isset(static::$buffs[$fd])) {
-            static::$buffs[$fd] = null;
+
+        if (!isset(static::$connections[$fd])) {
+            static::$connections[$fd]['buff'] = '';
         } else {
-            $data = static::$buffs[$fd] . $data;
+            $data = static::$connections[$fd]['buff'] . $data;
         }
-        $pack = substr($data, 4, 3);
-        $info = unpack('ncontentLength/CpaddingLength', $pack);
+        if (!isset(static::$connections[$fd]['length'])) {
+            $pack = substr($data, 4, 3);
+            $info = unpack('ncontentLength/CpaddingLength', $pack);
+            static::$connections[$fd]['length'] = 8 + $info['contentLength'] + $info['paddingLength'];
+        }
 
-        var_dump((8 + $info['contentLength'] + $info['paddingLength']), strlen($data));
-
-        if (8 + $info['contentLength'] + $info['paddingLength'] <= strlen($data)) {
+        if (static::$connections[$fd]['length'] <= strlen($data)) {
             $result = static::parseRecord($data);
 
-            static::$buffs[$fd] = $result['remainder'];
+            static::$connections[$fd]['buff'] = $result['remainder'];
+            static::$connections[$fd]['length'] = null;
         } else {
-            static::$buffs[$fd] = $data;
+            static::$connections[$fd]['buff'] = $data;
             return;
         }
 
-        // $result = static::parseRecord($data);
         if (count($result['records']) == 0) {
             fwrite(STDOUT, "Bad Request. data length: " . strlen($data));
-            static::$buffs = null;
-            // static::$server->close($fd);
+            static::$server->close($fd);
             return;
         }
         foreach ($result['records'] as $record) {
             $rid = $record['requestId'];
             $type = $record['type'];
-            var_dump($type);
 
             if ($type == self::FCGI_BEGIN_REQUEST) {
                 $req = static::$requests[$rid] = new Request($fd);
@@ -134,6 +134,7 @@ class FastCGI extends Http
                 $u = unpack('nrole/Cflags', $record['contentData']);
                 $req->attrs->role = self::$roles[$u['role']];
                 $req->attrs->flags = $u['flags'];
+                static::$connections[$fd]['request'] = $req;
             } elseif (isset(static::$requests[$rid])) {
                 $req = static::$requests[$rid];
             } else {
@@ -141,17 +142,14 @@ class FastCGI extends Http
                 return;
             }
 
-            if ($type === self::FCGI_ABORT_REQUEST) {
-                $req->abort();
-            } elseif ($type === self::FCGI_PARAMS) {
-                if ($record['contentData'] === '') {
-                    if (!isset($req->server['REQUEST_TIME'])) {
-                        $req->server['REQUEST_TIME'] = time();
-                    }
-                    if (!isset($req->server['REQUEST_TIME_FLOAT'])) {
-                        $req->server['REQUEST_TIME_FLOAT'] = microtime(true);
-                    }
-                    $req->attrs->paramsDone = true;
+            if ($type == self::FCGI_ABORT_REQUEST) {
+                unset(static::$requests[$rid]);
+                unset(static::$connections[$fd]);
+
+            } elseif ($type == self::FCGI_PARAMS) {
+                if (!$record['contentLength']) {
+
+                    $req->finishParams();
                 } else {
                     $p = 0;
                     while ($p < $record['contentLength']) {
@@ -176,14 +174,13 @@ class FastCGI extends Http
                     }
                 }
             } elseif ($type === self::FCGI_STDIN) {
-                if ($record['contentLength'] !== 0) {
+                if ($record['contentLength']) {
                     $req->setRawContent($record['contentData']);
                     continue;
                 } else {
                     $req->finishRawContent();
                 }
             }
-            var_dump("done: " . ($req->attrs->paramsDone ? 'true' : 'false')  . ($req->attrs->inputDone ? 'true' : 'false'));
 
             if ($req->attrs->paramsDone && $req->attrs->inputDone) {
                 $header = [];
@@ -221,13 +218,13 @@ class FastCGI extends Http
                 while (($ol = strlen($out)) > 0) {
                     $l = min($chunksize, $ol);
                     if (static::sendChunk($req, substr($out, 0, $l)) === false) {
-                        fwrite(STDOUT, "send response failed.");
+                        fwrite(STDOUT, "send response failed.\n");
                         break 2;
                     }
                     $out = substr($out, $l);
                 }
             } elseif (static::sendChunk($req, $out) === false) {
-                fwrite(STDOUT, "send response failed.");
+                fwrite(STDOUT, "send response failed.\n");
                 break;
             }
         } while (false);
@@ -273,14 +270,21 @@ class FastCGI extends Http
              . "\x00" // reserved
              . $c // content
         );
+        unset(static::$requests[$req->id]);
 
         if ($protoStatus === -1 || !($req->attrs->flags & static::FCGI_KEEP_CONN)) {
             static::$server->close($req->fd);
         }
     }
 
-    public static function onClose($serv, $fd, $req)
+    public static function onClose($serv, $fd, $from_id)
     {
-        unset(static::$requests[$fd]);
+        if (isset(static::$connections[$fd]['request'])) {
+            $request = static::$connections[$fd]['request'];
+            unset(static::$requests[$request->id]);
+        }
+        unset(static::$connections[$fd]);
+
     }
+
 }

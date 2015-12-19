@@ -89,6 +89,17 @@ class Request
         $this->attrs->inputDone = true;
     }
 
+    public function finishParams()
+    {
+        if (!isset($this->server['REQUEST_TIME'])) {
+            $this->server['REQUEST_TIME'] = time();
+        }
+        if (!isset($this->server['REQUEST_TIME_FLOAT'])) {
+            $req->server['REQUEST_TIME_FLOAT'] = microtime(true);
+        }
+        $this->attrs->paramsDone = true;
+    }
+
     public function destoryTempFiles()
     {
         if ($this->fp) {
