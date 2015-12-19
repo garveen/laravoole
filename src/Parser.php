@@ -89,6 +89,9 @@ class Parser
 
         do {
             $boundary_start = $current;
+            if($boundary_start > $rawContent_len) {
+                break;
+            }
 
             $chr = $rawContent[$boundary_start];
 
@@ -168,7 +171,7 @@ class Parser
                 $filename = tempnam($tempdir, 'laravoole_upload_');
                 $fp = fopen($filename, 'w');
                 $file_start = $current;
-                $file_error = UPLOAD_ERR_EXTENSION;
+                $file_status = UPLOAD_ERR_EXTENSION;
                 do {
                     $buf = substr($rawContent, $current, 8192);
                     if (!$buf) {
@@ -183,7 +186,7 @@ class Parser
                         }
                         $buf = substr($buf, 0, $len);
                         $current += $found;
-                        $file_ok = UPLOAD_ERR_OK;
+                        $file_status = UPLOAD_ERR_OK;
                         fwrite($fp, $buf);
                         break;
                     } else {
@@ -198,7 +201,7 @@ class Parser
                     'name' => $meta['filename'],
                     'type' => $head['Content-Type'],
                     'size' => $current - $file_start,
-                    'error' => $file_ok,
+                    'error' => $file_status,
                     'tmp_name' => $filename,
                 ];
                 $arr = '';

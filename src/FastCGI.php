@@ -143,6 +143,8 @@ class FastCGI extends Http
             }
 
             if ($type == self::FCGI_ABORT_REQUEST) {
+                $req->destoryTempFiles();
+
                 unset(static::$requests[$rid]);
                 unset(static::$connections[$fd]);
 
@@ -270,6 +272,7 @@ class FastCGI extends Http
              . "\x00" // reserved
              . $c // content
         );
+        $req->destoryTempFiles();
         unset(static::$requests[$req->id]);
 
         if ($protoStatus === -1 || !($req->attrs->flags & static::FCGI_KEEP_CONN)) {
@@ -281,6 +284,8 @@ class FastCGI extends Http
     {
         if (isset(static::$connections[$fd]['request'])) {
             $request = static::$connections[$fd]['request'];
+            $request->destoryTempFiles();
+
             unset(static::$requests[$request->id]);
         }
         unset(static::$connections[$fd]);

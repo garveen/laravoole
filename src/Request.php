@@ -62,9 +62,13 @@ class Request
 
     public function setRawContent($content)
     {
+        if($this->attrs->inputDone) {
+            return;
+        }
         $this->post_len += strlen($content);
         if ($this->post_len > $this->post_max_size) {
-            throw new \Exception("Request too large", 1);
+            $this->finishRawContent();
+            return;
         }
         if ($this->fp) {
             fwrite($this->fp, $content);
@@ -74,7 +78,7 @@ class Request
 
         // write to file when post > 2M
         if (strlen($this->rawContent) > 2097152) {
-            $this->tmpFile = tempnam($this->getTempDir(), 'laravoole');
+            $this->tmpFile = tempnam($this->getTempDir(), 'laravoole_');
             $this->fp = fopen($this->tmpFile, 'w');
             fwrite($this->fp, $this->rawContent);
         }
@@ -104,7 +108,11 @@ class Request
     {
         if ($this->fp) {
             fclose($this->fp);
+            $this->fp = null;
+        }
+        if($this->tmpFile && file_exists($this->tmpFile)) {
             unlink($this->tmpFile);
+            $this->tmpFile = null;
         }
         foreach ($this->files as $file) {
             if (isset($file['tmp_name'])) {
