@@ -50,7 +50,7 @@ function main($argc, $argv)
 
             // pass autoload_function for unregister it
             $server::init($construct_config['config'], $construct_config['swoole_settings']);
-            // require 'move_uploaded_file.php';
+
             $server::start();
         }
     } else {
@@ -198,6 +198,10 @@ function start()
         if (!isset($settings[$key])) {
             $settings[$key] = value($value);
         }
+    }
+
+    if(strcasecmp('fastcgi', $mode = env('LARAVOOLE_MODE', 'Http'))) {
+        $settings['dispatch_mode'] = 2;
     }
 
     $construct_config = [
