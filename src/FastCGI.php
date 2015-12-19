@@ -28,6 +28,8 @@ class FastCGI extends Http
     const FCGI_AUTHORIZER = 2;
     const FCGI_FILTER = 3;
 
+    const FCGI_KEEP_CONN = 1;
+
     protected static $roles = [
         self::FCGI_RESPONDER => 'FCGI_RESPONDER',
         self::FCGI_AUTHORIZER => 'FCGI_AUTHORIZER',
@@ -39,6 +41,7 @@ class FastCGI extends Http
     const STATE_PADDING = 2;
 
     static $requests = [];
+    static $buffs = [];
 
     public static function init($config, $swoole_settings)
     {
@@ -93,25 +96,48 @@ class FastCGI extends Http
 
     public static function onReceive($serv, $fd, $from_id, $data)
     {
-        $result = static::parseRecord($data);
+        var_dump('received: ' . strlen($data));
+        if (!isset(static::$buffs[$fd])) {
+            static::$buffs[$fd] = null;
+        } else {
+            $data = static::$buffs[$fd] . $data;
+        }
+        $pack = substr($data, 4, 3);
+        $info = unpack('ncontentLength/CpaddingLength', $pack);
+
+        var_dump((8 + $info['contentLength'] + $info['paddingLength']), strlen($data));
+
+        if (8 + $info['contentLength'] + $info['paddingLength'] <= strlen($data)) {
+            $result = static::parseRecord($data);
+
+            static::$buffs[$fd] = $result['remainder'];
+        } else {
+            static::$buffs[$fd] = $data;
+            return;
+        }
+
+        // $result = static::parseRecord($data);
         if (count($result['records']) == 0) {
-            fwrite(STDOUT, "Bad Request. data=" ."\nresult: " . var_export($result, true));
-            static::$server->close($fd);
+            fwrite(STDOUT, "Bad Request. data length: " . strlen($data));
+            static::$buffs = null;
+            // static::$server->close($fd);
             return;
         }
         foreach ($result['records'] as $record) {
             $rid = $record['requestId'];
             $type = $record['type'];
+            var_dump($type);
+
             if ($type == self::FCGI_BEGIN_REQUEST) {
+                $req = static::$requests[$rid] = new Request($fd);
+                $req->id = $rid;
                 $u = unpack('nrole/Cflags', $record['contentData']);
-                $req = new Request($fd, $rid);
                 $req->attrs->role = self::$roles[$u['role']];
                 $req->attrs->flags = $u['flags'];
-                static::$requests[$rid] = $req;
             } elseif (isset(static::$requests[$rid])) {
                 $req = static::$requests[$rid];
             } else {
-                fwrite(STDOUT, 'Unexpected FastCGI-record #. Request ID: ' . $rid . '.');
+                fwrite(STDOUT, "Unexpected FastCGI-record #. Request ID: $fd\n");
                 return;
             }
 
@@ -154,9 +180,10 @@ class FastCGI extends Http
                     $req->setRawContent($record['contentData']);
                     continue;
                 } else {
-                    $req->attrs->inputDone = true;
+                    $req->finishRawContent();
                 }
             }
+            var_dump("done: " . ($req->attrs->paramsDone ? 'true' : 'false')  . ($req->attrs->inputDone ? 'true' : 'false'));
 
             if ($req->attrs->paramsDone && $req->attrs->inputDone) {
                 $header = [];
@@ -165,13 +192,15 @@ class FastCGI extends Http
                         $header[strtr(ucwords(strtolower(substr($k, 5)), '_'), '_', '-')] = $v;
                     }
                 }
-                $req->body = $req->rawContent();
+
                 $req->header = $header;
                 Parser::parseCookie($req);
                 Parser::parseBody($req);
 
                 $response = new Response(static::class, $req);
                 static::onRequest($req, $response);
+                // destory tmp files
+                $req->destoryTempFiles();
 
             }
 
@@ -202,7 +231,7 @@ class FastCGI extends Http
                 break;
             }
         } while (false);
-        static::endRequest($req, 0, -1);
+        static::endRequest($req, 0, 0);
 
         return true;
     }
@@ -245,7 +274,7 @@ class FastCGI extends Http
              . $c // content
         );
 
-        if ($protoStatus === -1) {
+        if ($protoStatus === -1 || !($req->attrs->flags & static::FCGI_KEEP_CONN)) {
             static::$server->close($req->fd);
         }
     }
