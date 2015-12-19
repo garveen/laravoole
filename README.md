@@ -2,6 +2,8 @@
 
 Laravel on Swoole
 
+10x faster than php-fpm
+
 ##Depends On
 
 <table>
@@ -36,27 +38,23 @@ Laravel on Swoole
 
 In .env , use LARAVOOLE_* to config Laravoole.
 
+###FastCGI or HTTP
+------------------
+
+```INI
+ LARAVOOLE_MODE=Http
+ LARAVOOLE_MODE=FastCGI
+```
+
+Default is set to Http, and you can also use FastCGI.
+
+
 ###pid_file
 -----------
 
 ```INI
  LARAVOOLE_PID_FILE=/path/to/laravoole.pid
 ```
-
-###gzip
--------
-
-```INI
- LARAVOOLE_GZIP=1
-```
-
-level is in the range from 1 to 9, bigger is compress harder and use more CPU time.
-
-```INI
- LARAVOOLE_GZIP_MIN_LENGTH=1024
-```
-
-Sets the mINImum length of a response that will be gzipped.
 
 ###deal\_with\_public
 ---------------------
@@ -98,6 +96,7 @@ server {
 		break;
 	}
 
+	# proxy
 	location / {
 		proxy_set_header   Host $host:$server_port;
 		proxy_set_header   X-Real-IP $remote_addr;
@@ -105,6 +104,12 @@ server {
 		proxy_http_version 1.1;
 
 		proxy_pass http://127.0.0.1:9050;
+	}
+
+	# fastcgi
+	location / {
+		include fastcgi_params;
+		fastcgi_pass 127.0.0.1:9050;
 	}
 }
 ```
