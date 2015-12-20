@@ -5,13 +5,12 @@ use ErrorException;
 
 use Illuminate\Http\Request as IlluminateRequest;
 
-use swoole_http_server;
-use swoole_process;
 use Illuminate\Support\Facades\Facade;
+
+use Wrapper\SwooleHttp;
 
 class Http
 {
-    protected static $swoole_http_server;
     protected static $kernel;
     protected static $pid_file;
     protected static $root_dir;
@@ -52,7 +51,7 @@ class Http
 
     public static function start()
     {
-        static::$server = new swoole_http_server(static::$host, static::$port);
+        static::$server = new SwooleHttp(static::$host, static::$port);
 
         if (!empty(static::$swoole_settings)) {
             static::$server->set(static::$swoole_settings);
@@ -67,12 +66,12 @@ class Http
         static::$server->start();
     }
 
-    public static function onServerStart($serv)
+    public static function onServerStart()
     {
         // put pid
         file_put_contents(
             static::$pid_file,
-            $serv->master_pid
+            static::$server->getPid()
         );
     }
 

@@ -3,6 +3,7 @@ namespace Laravoole;
 
 use swoole_server;
 use Exception;
+use Wrapper\Swoole;
 
 class FastCGI extends Http
 {
@@ -52,7 +53,7 @@ class FastCGI extends Http
 
     public static function start()
     {
-        static::$server = new swoole_server(static::$host, static::$port);
+        static::$server = new Swoole(static::$host, static::$port);
 
         if (!empty(static::$swoole_settings)) {
             static::$server->set(static::$swoole_settings);
