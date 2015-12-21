@@ -39,9 +39,9 @@ abstract class Base
     public static function onWorkerStart($serv, $worker_id)
     {
         // unregister temporary autoloader
-        // foreach (spl_autoload_functions() as $function) {
-        //     spl_autoload_unregister($function);
-        // }
+        foreach (spl_autoload_functions() as $function) {
+            spl_autoload_unregister($function);
+        }
 
         require static::$root_dir . '/bootstrap/autoload.php';
         static::$app = static::getApp();
@@ -165,7 +165,6 @@ abstract class Base
     {
         static $public_path;
         if (!$public_path) {
-            // $app = static::getApp();
             $app = static::$app;
             $public_path = $app->make('path.public');
 

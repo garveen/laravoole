@@ -48,10 +48,8 @@ function main($argc, $argv)
 
             $server = "Laravoole\\{$construct_config['config']['mode']}";
 
-            // pass autoload_function for unregister it
-            $server::init($construct_config['config'], $construct_config['laravoole_settings']);
+            $server::start($construct_config['config'], $construct_config['laravoole_settings']);
 
-            $server::start();
         }
     } else {
 
@@ -180,7 +178,6 @@ function start()
             'gzip' => env('LARAVOOLE_GZIP', 1),
             'gzip_min_length' => env('LARAVOOLE_GZIP_MIN_LENGTH', 1024),
             'mode' => env('LARAVOOLE_MODE', 'Http'),
-            'cache_dir' => env('LARAVOOLE_CACHE_DIR', app()->storagePath() . '/laravoole_cache'),
         ],
         'laravoole_settings' => $settings,
     ];
