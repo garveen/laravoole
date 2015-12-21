@@ -8,11 +8,9 @@ use Illuminate\Http\Request as IlluminateRequest;
 
 use Illuminate\Support\Facades\Facade;
 
-use Laravoole\Wrapper\SwooleHttp;
 
 abstract class Base
 {
-    const WRAPPER = SwooleHttp::class;
 
     protected static $kernel;
     protected static $pid_file;
@@ -177,11 +175,13 @@ abstract class Base
                 $response->end();
             } else {
                 $response->header('Content-Type', get_mime_type($file));
-                $response->sendfile($file);
+                if(!filesize($file)) {
+                    $response->end();
+                } else {
+                    $response->sendfile($file);
+                }
             }
             return true;
-
-        } else {
         }
         return false;
 
