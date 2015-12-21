@@ -7,6 +7,8 @@ use Laravoole\Wrapper\Swoole;
 
 class FastCGI extends Http
 {
+    const WRAPPER = Swoole::class;
+
     protected static $lowMark = 8; // initial value of the minimal amout of bytes in buffer
     protected static $highMark = 0xFFFFFF; // initial value of the maximum amout of bytes in buffer
     public static $timeout = 180;

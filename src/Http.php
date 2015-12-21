@@ -11,6 +11,8 @@ use Laravoole\Wrapper\SwooleHttp;
 
 class Http
 {
+    const WRAPPER = SwooleHttp::class;
+
     protected static $kernel;
     protected static $pid_file;
     protected static $root_dir;

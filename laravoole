@@ -49,7 +49,7 @@ function main($argc, $argv)
             $server = "Laravoole\\{$construct_config['config']['mode']}";
 
             // pass autoload_function for unregister it
-            $server::init($construct_config['config'], $construct_config['swoole_settings']);
+            $server::init($construct_config['config'], $construct_config['laravoole_settings']);
 
             $server::start();
         }
@@ -129,7 +129,7 @@ function getPidFile()
     if ($pid_file === false) {
 
         $app = app();
-        $pid_file = env('LARAVOOLE_PID_FILE', $app->storagePath() . '/logs/swoole.pid');
+        $pid_file = env('LARAVOOLE_PID_FILE', $app->storagePath() . '/logs/laravoole.pid');
     }
     return $pid_file;
 
@@ -141,44 +141,10 @@ function start()
         exit(1);
     }
 
-    // http://wiki.swoole.com/wiki/page/274.html
-    $params = [
-        'reactor_num',
-        'worker_num',
-        'max_request',
-        'max_conn',
-        'task_worker_num',
-        'task_ipc_mode',
-        'task_max_request',
-        'task_tmpdir',
-        'dispatch_mode',
-        'message_queue_key',
-        'daemonize',
-        'backlog',
-        'log_file',
-        'heartbeat_check_interval',
-        'heartbeat_idle_time',
-        'open_eof_check',
-        'open_eof_split',
-        'package_eof',
-        'open_length_check',
-        'package_length_type',
-        'package_max_length',
-        'open_cpu_affinity',
-        'cpu_affinity_ignore',
-        'open_tcp_nodelay',
-        'tcp_defer_accept',
-        'ssl_cert_file',
-        'ssl_method',
-        'user',
-        'group',
-        'chroot',
-        'pipe_buffer_size',
-        'buffer_output_size',
-        'enable_unsafe_event',
-        'discard_timeout_request',
-        'enable_reuse_port',
-    ];
+    $mode = env('LARAVOOLE_MODE', 'Http');
+    $reflection = new ReflectionClass("Laravoole\\$mode");
+    $wrapper = $reflection->getConstant('WRAPPER');
+    $params = $wrapper::PARAMS;
 
     $settings = [];
     foreach ($params as $param) {
@@ -190,7 +156,7 @@ function start()
     }
 
     $defaults = [
-        'log_file' => function () {return app()->storagePath() . '/logs/swoole.log';},
+        'log_file' => function () {return app()->storagePath() . '/logs/laravoole.log';},
         'daemonize' => 1,
         'max_request' => 2000,
     ];
@@ -216,7 +182,7 @@ function start()
             'mode' => env('LARAVOOLE_MODE', 'Http'),
             'cache_dir' => env('LARAVOOLE_CACHE_DIR', app()->storagePath() . '/laravoole_cache'),
         ],
-        'swoole_settings' => $settings,
+        'laravoole_settings' => $settings,
     ];
 
     $handle = popen('/usr/bin/env php ' .__FILE__, 'w');
