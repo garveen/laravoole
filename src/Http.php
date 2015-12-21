@@ -7,7 +7,7 @@ use Illuminate\Http\Request as IlluminateRequest;
 
 use Illuminate\Support\Facades\Facade;
 
-use Wrapper\SwooleHttp;
+use Laravoole\Wrapper\SwooleHttp;
 
 class Http
 {
@@ -56,10 +56,10 @@ class Http
         if (!empty(static::$swoole_settings)) {
             static::$server->set(static::$swoole_settings);
         }
-        static::$server->on('start', [static::class, 'onServerStart']);
-        static::$server->on('shutdown', [static::class, 'onServerShutdown']);
+        static::$server->on('Start', [static::class, 'onServerStart']);
+        static::$server->on('Shutdown', [static::class, 'onServerShutdown']);
         static::$server->on('WorkerStart', [static::class, 'onWorkerStart']);
-        static::$server->on('request', [static::class, 'onRequest']);
+        static::$server->on('Request', [static::class, 'onRequest']);
 
         require __DIR__ . '/Mime.php';
 

@@ -3,7 +3,7 @@ namespace Laravoole;
 
 use swoole_server;
 use Exception;
-use Wrapper\Swoole;
+use Laravoole\Wrapper\Swoole;
 
 class FastCGI extends Http
 {
@@ -58,11 +58,11 @@ class FastCGI extends Http
         if (!empty(static::$swoole_settings)) {
             static::$server->set(static::$swoole_settings);
         }
-        static::$server->on('start', [static::class, 'onServerStart']);
-        static::$server->on('receive', [static::class, 'onReceive']);
-        static::$server->on('shutdown', [static::class, 'onServerShutdown']);
+        static::$server->on('Start', [static::class, 'onServerStart']);
+        static::$server->on('Receive', [static::class, 'onReceive']);
+        static::$server->on('Shutdown', [static::class, 'onServerShutdown']);
         static::$server->on('WorkerStart', [static::class, 'onWorkerStart']);
-        static::$server->on('close', [static::class, 'onClose']);
+        static::$server->on('Close', [static::class, 'onClose']);
 
         require __DIR__ . '/Mime.php';
 
