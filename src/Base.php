@@ -34,20 +34,6 @@ abstract class Base
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
     }
 
-    public static function onWorkerStart($serv, $worker_id)
-    {
-        // unregister temporary autoloader
-        foreach (spl_autoload_functions() as $function) {
-            spl_autoload_unregister($function);
-        }
-
-        require static::$root_dir . '/bootstrap/autoload.php';
-        static::$app = static::getApp();
-
-        static::$kernel = static::$app->make(\Illuminate\Contracts\Http\Kernel::class);
-
-    }
-
     public static function onRequest($request, $response)
     {
         // for file system

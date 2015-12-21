@@ -6,7 +6,7 @@ use swoole_http_server;
 class SwooleHttp implements ServerInterface
 {
     // http://wiki.swoole.com/wiki/page/274.html
-    const PARAMS = [
+    static $params = [
         'reactor_num',
         'worker_num',
         'max_request',
@@ -44,11 +44,22 @@ class SwooleHttp implements ServerInterface
         'enable_reuse_port',
     ];
 
+    static $defaults = [
+        'log_file' => [self::class, 'getLogFile'],
+        'daemonize' => 1,
+        'max_request' => 2000,
+    ];
+
     protected $server;
 
     public function __construct($host, $port)
     {
         $this->server = new swoole_http_server($host, $port);
+    }
+
+    public static function getLogFile()
+    {
+        return app()->storagePath() . '/logs/laravoole.log';
     }
 
     public function on($event, callable $callback)
