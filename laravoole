@@ -31,18 +31,15 @@ function main()
     if ($argc <= 1) {
         if (posix_isatty(STDIN)) {
             echo 'Laravoole by Garveen' . PHP_EOL;
-            echo  PHP_EOL;
+            echo PHP_EOL;
             echo 'Usage:' . PHP_EOL;
             echo ' laravoole start | stop | reload | restart | quit' . PHP_EOL;
-            echo  PHP_EOL;
+            echo PHP_EOL;
         } else {
             $input = file_get_contents('php://stdin');
-            spl_autoload_register(function($class) {
-                if(is_file($file = __DIR__ . '/src/' . substr(strtr($class, '\\', '/'), 10) . '.php')) {
+            spl_autoload_register(function ($class) {
+                if (is_file($file = __DIR__ . '/src/' . substr(strtr($class, '\\', '/'), 10) . '.php')) {
                     require $file;
-                } else {
-                    throw new Exception("file not found", 1);
-
                 }
             });
             $construct_config = unserialize($input);
@@ -141,7 +138,21 @@ function start()
         exit(1);
     }
 
-    $mode = env('LARAVOOLE_MODE', 'SwooleHttp');
+    $mode = env('LARAVOOLE_MODE', function () {
+        if (extension_loaded('swoole')) {
+            return 'SwooleHttp';
+        } elseif (class_exists('Workerman\Worker')) {
+            return 'WorkermanFastCGI';
+        } else {
+            echo "Laravoole needs Swoole or Workerman." . PHP_EOL .
+                "You can install Swoole by command:" . PHP_EOL .
+                " pecl install swoole" . PHP_EOL .
+                "Or you can install Workerman by command:" . PHP_EOL .
+                " composer require workerman/workerman" . PHP_EOL;
+            exit;
+        }
+    });
+
     $reflection = new ReflectionClass("Laravoole\\$mode");
     $wrapper = $reflection->getConstant('WRAPPER');
 
@@ -162,9 +173,10 @@ function start()
         }
     }
 
-    if (!strcasecmp('fastcgi', $mode = env('LARAVOOLE_MODE', 'Http'))) {
+    if (!strcasecmp('SwooleFastCGI', $mode)) {
         $settings['dispatch_mode'] = 2;
     }
+
     global $argv;
     $construct_config = [
         'config' => [
@@ -175,7 +187,7 @@ function start()
             'deal_with_public' => env('LARAVOOLE_DEAL_WITH_PUBLIC', false),
             'gzip' => env('LARAVOOLE_GZIP', 1),
             'gzip_min_length' => env('LARAVOOLE_GZIP_MIN_LENGTH', 1024),
-            'mode' => env('LARAVOOLE_MODE', 'Http'),
+            'mode' => $mode,
         ],
         'laravoole_settings' => $settings,
         'argv' => $argv,
