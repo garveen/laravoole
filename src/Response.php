@@ -195,7 +195,7 @@ class Response
         $out = $this->getHeader(true);
         $out .= $content;
         $protocol = $this->protocol;
-        $protocol::response($this->request, $out);
+        $protocol->response($this->request, $out);
     }
     public function sendfile($file)
     {

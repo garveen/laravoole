@@ -12,48 +12,48 @@ use Illuminate\Support\Facades\Facade;
 abstract class Base
 {
 
-    protected static $kernel;
-    protected static $pid_file;
-    protected static $root_dir;
-    protected static $deal_with_public;
-    protected static $gzip;
-    protected static $gzip_min_length;
-    protected static $host;
-    protected static $port;
+    protected $kernel;
+    protected $pid_file;
+    protected $root_dir;
+    protected $deal_with_public;
+    protected $gzip;
+    protected $gzip_min_length;
+    protected $host;
+    protected $port;
 
-    protected static $tmp_autoloader;
+    protected $tmp_autoloader;
 
-    protected static $settings;
+    protected $settings;
 
-    protected static $app;
+    protected $app;
 
-    protected static $server;
+    protected $server;
 
-    public static function start($config, $settings)
+    public function start($config, $settings)
     {
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
     }
 
-    public static function onRequest($request, $response)
+    public function onRequest($request, $response)
     {
         // for file system
         clearstatcache();
-        if (static::$deal_with_public) {
-            if (static::dealWithPublic($request, $response)) {
+        if ($this->deal_with_public) {
+            if ($this->dealWithPublic($request, $response)) {
                 return;
             }
         }
 
         try {
-            $kernel = static::$kernel;
+            $kernel = $this->kernel;
 
-            $illuminate_request = static::dealWithRequest($request);
+            $illuminate_request = $this->dealWithRequest($request);
 
             $illuminate_response = $kernel->handle($illuminate_request);
             // Is gzip enabled and the client accept it?
-            $accept_gzip = static::$gzip && isset($request->header['accept-encoding']) && stripos($request->header['accept-encoding'], 'gzip') !== false;
+            $accept_gzip = $this->gzip && isset($request->header['accept-encoding']) && stripos($request->header['accept-encoding'], 'gzip') !== false;
 
-            static::dealWithResponse($response, $illuminate_response, $accept_gzip);
+            $this->dealWithResponse($response, $illuminate_response, $accept_gzip);
 
         } catch (\Exception $e) {
             echo '[ERR] ' . $e->getFile() . '(' . $e->getLine() . '): ' . $e->getMessage() . PHP_EOL;
@@ -69,8 +69,8 @@ abstract class Base
                 $illuminate_request->getSession()->clear();
             }
 
-            if (static::$app->isProviderLoaded(Illuminate\Auth\AuthServiceProvider::class)) {
-                static::$app->register(\Illuminate\Auth\AuthServiceProvider::class, [], true);
+            if ($this->app->isProviderLoaded(Illuminate\Auth\AuthServiceProvider::class)) {
+                $this->app->register(\Illuminate\Auth\AuthServiceProvider::class, [], true);
                 Facade::clearResolvedInstance('auth');
             }
 
@@ -79,7 +79,7 @@ abstract class Base
 
     }
 
-    private static function dealWithRequest($request)
+    private function dealWithRequest($request)
     {
 
         $get = isset($request->get) ? $request->get : array();
@@ -108,7 +108,7 @@ abstract class Base
         return $illuminate_request;
     }
 
-    private static function dealWithResponse($response, $illuminate_response, $accept_gzip)
+    private function dealWithResponse($response, $illuminate_response, $accept_gzip)
     {
 
         // status
@@ -137,19 +137,19 @@ abstract class Base
         // check gzip
         if ($accept_gzip && isset($response->header['Content-Type'])) {
             $mime = $response->header['Content-Type'];
-            if (strlen($content) > static::$gzip_min_length && is_mime_gzip($mime)) {
-                // $response->gzip(static::$gzip);
+            if (strlen($content) > $this->gzip_min_length && is_mime_gzip($mime)) {
+                // $response->gzip($this->gzip);
             }
         }
         // send content & close
         $response->end($content);
     }
 
-    protected static function dealWithPublic($request, $response)
+    protected function dealWithPublic($request, $response)
     {
         static $public_path;
         if (!$public_path) {
-            $app = static::$app;
+            $app = $this->app;
             $public_path = $app->make('path.public');
 
         }
@@ -173,10 +173,10 @@ abstract class Base
 
     }
 
-    protected static function getApp()
+    protected function getApp()
     {
 
-        $app = new App(static::$root_dir);
+        $app = new App($this->root_dir);
 
         $app->singleton(
             \Illuminate\Contracts\Http\Kernel::class,

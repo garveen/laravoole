@@ -45,9 +45,9 @@ function main()
             $construct_config = unserialize($input);
 
             $argv = $construct_config['argv'];
-            $server = "Laravoole\\{$construct_config['config']['mode']}";
+            $server = new Laravoole\Server($construct_config['config']['mode']);
 
-            $server::start($construct_config['config'], $construct_config['laravoole_settings']);
+            $server->start($construct_config['config'], $construct_config['laravoole_settings']);
 
         }
     } else {
@@ -153,8 +153,7 @@ function start()
         }
     });
 
-    $reflection = new ReflectionClass("Laravoole\\$mode");
-    $wrapper = $reflection->getConstant('WRAPPER');
+    $wrapper = "Laravoole\\Wrapper\\{$mode}Wrapper";
 
     $settings = $wrapper::$defaults;
     foreach ($settings as $key => $value) {
