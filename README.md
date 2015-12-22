@@ -1,6 +1,6 @@
 #Laravoole
 
-Laravel on Swoole
+Laravel on Swoole Or Workerman
 
 10x faster than php-fpm
 
@@ -13,8 +13,19 @@ Laravel on Swoole
 	<tr>
 		<td>laravel/framework</td><td>5.1.*</td>
 	</tr>
+</table>
+
+##Suggests
+
+<table>
 	<tr>
-		<td>ext-swoole</td><td>>=1.7.19</td>
+		<td>php</td><td>>=7.0.0</td>
+	</tr>
+	<tr>
+		<td>ext-swoole</td><td>>=1.7.21</td>
+	</tr>
+	<tr>
+		<td>workerman/workerman</td><td>>=3.0</td>
 	</tr>
 </table>
 
@@ -42,11 +53,12 @@ In .env , use LARAVOOLE_* to config Laravoole.
 ------------------
 
 ```INI
- LARAVOOLE_MODE=Http
- LARAVOOLE_MODE=FastCGI
+ LARAVOOLE_MODE=SwooleHttp
+ LARAVOOLE_MODE=SwooleFastCGI
+ LARAVOOLE_MODE=WorkermanFastCGI
 ```
 
-Default is set to Http, and you can also use FastCGI.
+Default is set to SwooleHttp, or you can also use other protocols.
 
 
 ###pid_file
@@ -65,22 +77,43 @@ Use this ***ONLY*** when developing
  LARAVOOLE_DEAL_WITH_PUBLIC=true
 ```
 
-###Swoole
----------
-
-Example:
+###Host and Port
 
 ```INI
  LARAVOOLE_HOST=0.0.0.0
+ LARAVOOLE_PORT=9050
 ```
 
 Default host is 127.0.0.1:9050
+
+###Swoole
+---------
+
+As an example, if want to set worker_num to 8, just add a line:
+
+```INI
+ LARAVOOLE_WORKER_NUM=8
+```
 
 See Swoole's document:
 
 [简体中文](http://wiki.swoole.com/wiki/page/274.html)
 
 [English](https://cdn.rawgit.com/tchiotludo/swoole-ide-helper/dd73ce0dd949870daebbf3e8fee64361858422a1/docs/classes/swoole_server.html#method_set)
+
+###Workerman
+
+As an example, if want to set the count of workers to 8, just add a line:
+
+```INI
+ LARAVOOLE_COUNT=8
+```
+
+See Workerman's document:
+
+[简体中文](http://doc3.workerman.net/worker-development/property.html)
+
+[English](http://wiki.workerman.net/Workerman_documentation#Properties)
 
 ##Work with nginx
 -----------------

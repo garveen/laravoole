@@ -12,17 +12,17 @@
     ],
     "require": {
         "php": ">=5.5.9",
-        "laravel/framework": "5.1.*",
-        "ext-swoole": ">=1.7.19",
+        "laravel/framework": "5.1.* || 5.2.*",
         "ext-posix": "*"
+    },
+    "suggest": {
+        "ext-swoole": "event-based extension for best performance",
+        "workerman/workerman": "event-based library without need for any extension"
     },
     "bin": ["laravoole"],
     "autoload": {
         "psr-0": {
             "Laravoole": "src/"
         }
-
-
     }
 }
-
