@@ -155,7 +155,7 @@ function start()
 
     $wrapper = "Laravoole\\Wrapper\\{$mode}Wrapper";
 
-    $settings = $wrapper::$defaults;
+    $settings = $wrapper::getDefaults();
     foreach ($settings as $key => $value) {
         if (is_array($value)) {
             $settings[$key] = $value();
@@ -164,7 +164,7 @@ function start()
         }
     }
 
-    foreach ($wrapper::$params as $param) {
+    foreach ($wrapper::getParams() as $param) {
         $key = 'LARAVOOLE_' . strtoupper($param);
         $value = env($key);
         if ($value !== null) {

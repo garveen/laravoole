@@ -6,14 +6,14 @@ class Response
     public $http_protocol = 'HTTP/1.1';
     public $http_status = 200;
 
-    public $head;
+    public $header;
     public $cookie;
     public $body;
 
     static $HTTP_HEADERS = array(
         100 => 'Continue',
         101 => 'Switching Protocols',
-        102 => 'Processing',            // RFC2518
+        102 => 'Processing', // RFC2518
         200 => 'OK',
         201 => 'Created',
         202 => 'Accepted',
@@ -21,9 +21,9 @@ class Response
         204 => 'No Content',
         205 => 'Reset Content',
         206 => 'Partial Content',
-        207 => 'Multi-Status',          // RFC4918
-        208 => 'Already Reported',      // RFC5842
-        226 => 'IM Used',               // RFC3229
+        207 => 'Multi-Status', // RFC4918
+        208 => 'Already Reported', // RFC5842
+        226 => 'IM Used', // RFC3229
         300 => 'Multiple Choices',
         301 => 'Moved Permanently',
         302 => 'Found',
@@ -32,7 +32,7 @@ class Response
         305 => 'Use Proxy',
         306 => 'Reserved',
         307 => 'Temporary Redirect',
-        308 => 'Permanent Redirect',    // RFC7238
+        308 => 'Permanent Redirect', // RFC7238
         400 => 'Bad Request',
         401 => 'Unauthorized',
         402 => 'Payment Required',
@@ -51,26 +51,26 @@ class Response
         415 => 'Unsupported Media Type',
         416 => 'Requested Range Not Satisfiable',
         417 => 'Expectation Failed',
-        418 => 'I\'m a teapot',                                               // RFC2324
-        422 => 'Unprocessable Entity',                                        // RFC4918
-        423 => 'Locked',                                                      // RFC4918
-        424 => 'Failed Dependency',                                           // RFC4918
-        425 => 'Reserved for WebDAV advanced collections expired proposal',   // RFC2817
-        426 => 'Upgrade Required',                                            // RFC2817
-        428 => 'Precondition Required',                                       // RFC6585
-        429 => 'Too Many Requests',                                           // RFC6585
-        431 => 'Request Header Fields Too Large',                             // RFC6585
+        418 => 'I\'m a teapot', // RFC2324
+        422 => 'Unprocessable Entity', // RFC4918
+        423 => 'Locked', // RFC4918
+        424 => 'Failed Dependency', // RFC4918
+        425 => 'Reserved for WebDAV advanced collections expired proposal', // RFC2817
+        426 => 'Upgrade Required', // RFC2817
+        428 => 'Precondition Required', // RFC6585
+        429 => 'Too Many Requests', // RFC6585
+        431 => 'Request Header Fields Too Large', // RFC6585
         500 => 'Internal Server Error',
         501 => 'Not Implemented',
         502 => 'Bad Gateway',
         503 => 'Service Unavailable',
         504 => 'Gateway Timeout',
         505 => 'HTTP Version Not Supported',
-        506 => 'Variant Also Negotiates (Experimental)',                      // RFC2295
-        507 => 'Insufficient Storage',                                        // RFC4918
-        508 => 'Loop Detected',                                               // RFC5842
-        510 => 'Not Extended',                                                // RFC2774
-        511 => 'Network Authentication Required',                             // RFC6585
+        506 => 'Variant Also Negotiates (Experimental)', // RFC2295
+        507 => 'Insufficient Storage', // RFC4918
+        508 => 'Loop Detected', // RFC5842
+        510 => 'Not Extended', // RFC2774
+        511 => 'Network Authentication Required', // RFC6585
     );
 
     protected $protocol;
@@ -80,6 +80,7 @@ class Response
     {
         $this->protocol = $protocol;
         $this->request = $request;
+        $this->request->response = $this;
     }
 
     /**
@@ -88,7 +89,7 @@ class Response
      */
     public function status($code)
     {
-        // $this->head[0] = $this->http_protocol.' '.self::$HTTP_HEADERS[$code];
+        // $this->header[0] = $this->http_protocol.' '.self::$HTTP_HEADERS[$code];
         $this->http_status = $code;
     }
 
@@ -99,7 +100,7 @@ class Response
      */
     public function header($key, $value)
     {
-        $this->head[$key] = $value;
+        $this->header[$key] = $value;
     }
 
     /**
@@ -114,24 +115,9 @@ class Response
      */
     public function rawcookie($name, $value = null, $expire = null, $path = '/', $domain = null, $secure = null, $httponly = null)
     {
-        if ($value == null) {
-            $value = 'deleted';
-        }
-        $cookie = "$name=$value";
-        if ($expire) {
-            $cookie .= "; expires=" . date("D, d-M-Y H:i:s T", $expire);
-        }
-        if ($path) {
-            $cookie .= "; path=$path";
-        }
-        if ($secure) {
-            $cookie .= "; secure";
-        }
-        if ($domain) {
-            $cookie .= "; domain=$domain";
-        }
-        if ($httponly) {
-            $cookie .= '; httponly';
+        $cookie = [];
+        foreach (['name', 'value', 'expire', 'path', 'domain', 'secure', 'httponly'] as $key) {
+            $cookie[$key] = $$key;
         }
         $this->cookie[] = $cookie;
     }
@@ -142,7 +128,7 @@ class Response
      */
     public function addHeaders(array $header)
     {
-        $this->head = array_merge($this->head, $header);
+        $this->header = array_merge($this->header, $header);
     }
 
     public function getHeader($fastcgi = false)
@@ -152,31 +138,52 @@ class Response
             $out .= 'Status: ' . $this->http_status . ' ' . static::$HTTP_HEADERS[$this->http_status] . "\r\n";
         } else {
             //Protocol
-            if (isset($this->head[0])) {
-                $out .= $this->head[0] . "\r\n";
-                unset($this->head[0]);
+            if (isset($this->header[0])) {
+                $out .= $this->header[0] . "\r\n";
+                unset($this->header[0]);
             } else {
                 $out = "HTTP/1.1 200 OK\r\n";
             }
         }
         //fill header
-        if (!isset($this->head['Server'])) {
-            $this->head['Server'] = 'php';
+        if (!isset($this->header['Server'])) {
+            $this->header['Server'] = 'php';
         }
-        if (!isset($this->head['Content-Type'])) {
-            $this->head['Content-Type'] = 'text/html'; //charset=
+        if (!isset($this->header['Content-Type'])) {
+            $this->header['Content-Type'] = 'text/html'; //charset=
         }
-        if (!isset($this->head['Content-Length'])) {
-            $this->head['Content-Length'] = strlen($this->body);
+        if (!isset($this->header['Content-Length'])) {
+            $this->header['Content-Length'] = strlen($this->body);
         }
         //Headers
-        foreach ($this->head as $k => $v) {
+        foreach ($this->header as $k => $v) {
             $out .= $k . ': ' . $v . "\r\n";
         }
         //Cookies
         if (!empty($this->cookie) and is_array($this->cookie)) {
-            foreach ($this->cookie as $v) {
-                $out .= "Set-Cookie: $v\r\n";
+            foreach ($this->cookie as $cookie) {
+
+                if ($cookie['value'] == null) {
+                    $cookie['value'] = 'deleted';
+                }
+                $value = "{$cookie['name']}={$cookie['value']}";
+                if ($cookie['expire']) {
+                    $value .= "; expires=" . date("D, d-M-Y H:i:s T", $cookie['expire']);
+                }
+                if ($cookie['path']) {
+                    $value .= "; path={$cookie['path']}";
+                }
+                if ($cookie['secure']) {
+                    $value .= "; secure";
+                }
+                if ($cookie['domain']) {
+                    $value .= "; domain={$cookie['domain']}";
+                }
+                if ($cookie['httponly']) {
+                    $value .= '; httponly';
+                }
+
+                $out .= "Set-Cookie: $value\r\n";
             }
         }
         //End
@@ -186,8 +193,8 @@ class Response
 
     public function noCache()
     {
-        $this->head['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0';
-        $this->head['Pragma'] = 'no-cache';
+        $this->header['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0';
+        $this->header['Pragma'] = 'no-cache';
     }
     public function end($content)
     {
@@ -199,7 +206,7 @@ class Response
     }
     public function sendfile($file)
     {
-        $this->head['x-sendfile'] = $file;
+        $this->header['x-sendfile'] = $file;
     }
 }
 

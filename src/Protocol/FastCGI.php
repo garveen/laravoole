@@ -46,16 +46,6 @@ trait FastCGI
     public $requests = [];
     public $connections = [];
 
-    protected function close($fd)
-    {
-        throw new Exception(__CLASS__ . "::close MUST be implemented", 1);
-    }
-
-    protected function send($fd, $content)
-    {
-        throw new Exception(__CLASS__ . "::send MUST be implemented", 1);
-    }
-
     public function parseRecord($data)
     {
         $records = array();

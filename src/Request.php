@@ -17,7 +17,6 @@ class Request
     public $post = array();
     public $files = array();
     public $cookie = array();
-    public $session = array();
     public $server = array();
 
     public $attrs;
@@ -39,6 +38,8 @@ class Request
     protected $post_max_size = 0;
     protected $tmp_dir;
     protected $post_len = 0;
+
+    public $response;
 
     public function __construct($fd)
     {

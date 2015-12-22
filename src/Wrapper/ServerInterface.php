@@ -3,6 +3,8 @@ namespace Laravoole\Wrapper;
 
 interface ServerInterface
 {
+    public static function getParams();
+    public static function getDefaults();
     /**
      * event callback
      * @param  string   $event    start receive shutdown WorkerStart close request
