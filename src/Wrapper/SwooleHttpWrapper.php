@@ -3,7 +3,7 @@ namespace Laravoole\Wrapper;
 
 use swoole_http_server;
 
-class SwooleHttp implements ServerInterface
+class SwooleHttpWrapper implements ServerInterface
 {
     // http://wiki.swoole.com/wiki/page/274.html
     static $params = [

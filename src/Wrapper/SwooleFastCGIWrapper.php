@@ -3,7 +3,7 @@ namespace Laravoole\Wrapper;
 
 use swoole_server;
 
-class Swoole extends SwooleHttp implements ServerInterface
+class SwooleFastCGIWrapper extends SwooleHttpWrapper implements ServerInterface
 {
     protected $server;
 

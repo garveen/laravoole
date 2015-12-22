@@ -83,10 +83,10 @@ trait FastCGI
         return array('records' => $records, 'remainder' => $data);
     }
 
-    public static function onReceive($serv, $fd, $from_id, $data)
+    public static function receive($fd, $data)
     {
 
-        if (!isset(static::$connections[$fd])) {
+        if (!isset(static::$connections[$fd]['buff'])) {
             static::$connections[$fd]['buff'] = '';
         } else {
             $data = static::$connections[$fd]['buff'] . $data;
@@ -109,7 +109,7 @@ trait FastCGI
 
         if (count($result['records']) == 0) {
             fwrite(STDOUT, "Bad Request. data length: " . strlen($data));
-            static::close($fd);
+            static::closeConnection($fd);
             return;
         }
         foreach ($result['records'] as $record) {
@@ -133,8 +133,7 @@ trait FastCGI
             if ($type == static::$FCGI_ABORT_REQUEST) {
                 $req->destoryTempFiles();
 
-                unset(static::$requests[$rid]);
-                unset(static::$connections[$fd]);
+                static::closeConnection($fd);
 
             } elseif ($type == static::$FCGI_PARAMS) {
                 if (!$record['contentLength']) {
@@ -264,14 +263,13 @@ trait FastCGI
 
         static::send($req->fd, $payload);
         $req->destoryTempFiles();
-        unset(static::$requests[$req->id]);
 
         if ($protoStatus === -1 || !($req->attrs->flags & static::$FCGI_KEEP_CONN)) {
-            static::close($req->fd);
+            static::closeConnection($req->fd);
         }
     }
 
-    public static function onClose($serv, $fd, $from_id)
+    public static function closeConnection($fd)
     {
         if (isset(static::$connections[$fd]['request'])) {
             $request = static::$connections[$fd]['request'];
@@ -279,6 +277,7 @@ trait FastCGI
 
             unset(static::$requests[$request->id]);
         }
+        static::close($fd);
         unset(static::$connections[$fd]);
 
     }

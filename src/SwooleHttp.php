@@ -1,11 +1,11 @@
 <?php
 namespace Laravoole;
 
-use Laravoole\Wrapper\SwooleHttp;
+use Laravoole\Wrapper\SwooleHttpWrapper;
 
-class Http extends Base
+class SwooleHttp extends Base
 {
-    const WRAPPER = SwooleHttp::class;
+    const WRAPPER = SwooleHttpWrapper::class;
     protected function init($config)
     {
         static::$host = $config['host'];
@@ -23,7 +23,7 @@ class Http extends Base
         static::init($config);
         static::$settings = $settings;
 
-        static::$server = new SwooleHttp(static::$host, static::$port);
+        static::$server = new SwooleHttpWrapper(static::$host, static::$port);
 
         if (!empty(static::$settings)) {
             static::$server->set(static::$settings);

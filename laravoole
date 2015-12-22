@@ -141,7 +141,7 @@ function start()
         exit(1);
     }
 
-    $mode = env('LARAVOOLE_MODE', 'Http');
+    $mode = env('LARAVOOLE_MODE', 'SwooleHttp');
     $reflection = new ReflectionClass("Laravoole\\$mode");
     $wrapper = $reflection->getConstant('WRAPPER');
 

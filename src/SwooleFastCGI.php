@@ -3,13 +3,13 @@ namespace Laravoole;
 
 use swoole_server;
 use Exception;
-use Laravoole\Wrapper\Swoole;
+use Laravoole\Wrapper\SwooleFastCGIWrapper;
 
-class FastCGI extends Http
+class SwooleFastCGI extends SwooleHttp
 {
-    use Protocol\FastCGI;
 
-    const WRAPPER = Swoole::class;
+    use Protocol\FastCGI;
+    const WRAPPER = SwooleFastCGIWrapper::class;
 
     public static function start($config, $settings)
     {
@@ -18,7 +18,7 @@ class FastCGI extends Http
         parent::init($config);
         static::$settings = $settings;
 
-        static::$server = new Swoole(static::$host, static::$port);
+        static::$server = new SwooleFastCGIWrapper(static::$host, static::$port);
 
         if (!empty(static::$settings)) {
             static::$server->set(static::$settings);
@@ -27,11 +27,15 @@ class FastCGI extends Http
         static::$server->on('Receive', [static::class, 'onReceive']);
         static::$server->on('Shutdown', [static::class, 'onServerShutdown']);
         static::$server->on('WorkerStart', [static::class, 'onWorkerStart']);
-        static::$server->on('Close', [static::class, 'onClose']);
 
         require __DIR__ . '/Mime.php';
 
         static::$server->start();
+    }
+
+    public static function onReceive($serv, $fd, $from_id, $data)
+    {
+        return static::receive($fd, $data);
     }
 
     protected static function send($fd, $content)
