@@ -1,8 +1,8 @@
 {
     "name": "acabin/laravoole",
-    "description": "Laravel & Swoole",
+    "description": "Get 10x performance for Laravel on Swoole or Workerman",
     "type": "library",
-    "keywords": ["laravel","swoole"],
+    "keywords": ["laravel","swoole","workerman"],
     "license": "MIT",
     "authors": [
         {
