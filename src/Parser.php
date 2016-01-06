@@ -43,6 +43,16 @@ class Parser
         return $params;
     }
 
+    public static function parseQueryString($request)
+    {
+        if (!isset($request->server['QUERY_STRING'])) {
+            return
+        }
+        $getParams = [];
+        parse_str($request->server['QUERY_STRING'], $getParams);
+        $req->get = empty($getParams) ? null : $getParams;
+    }
+
     public static function parseBody($request)
     {
         if (!isset($request->header['Content-Type'])) {
