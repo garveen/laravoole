@@ -21,8 +21,8 @@
     },
     "bin": ["laravoole"],
     "autoload": {
-        "psr-0": {
-            "Laravoole": "src/"
+        "psr-4": {
+            "Laravoole\\": "src/"
         }
     }
 }
