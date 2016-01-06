@@ -125,12 +125,13 @@ server {
 
 	root /path/to/laravel/public;
 
-	location ~ \.(png|jpeg|jpg|gif|css|js)$ {
-		break;
-	}
+	location / {
+            try_files $uri $uri/ @swoole;
+            index  index.html index.htm index.php;
+        }
 
 	# proxy
-	location / {
+	location @swoole {
 		proxy_set_header   Host $host:$server_port;
 		proxy_set_header   X-Real-IP $remote_addr;
 		proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -140,7 +141,7 @@ server {
 	}
 
 	# fastcgi
-	location / {
+	location @swoole {
 		include fastcgi_params;
 		fastcgi_pass 127.0.0.1:9050;
 	}
