@@ -170,6 +170,7 @@ trait FastCGI
                 }
 
                 $req->header = $header;
+                Parser::parseQueryString($req);
                 Parser::parseCookie($req);
                 Parser::parseBody($req);
 
