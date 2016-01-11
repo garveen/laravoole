@@ -46,7 +46,7 @@ class Parser
     public static function parseQueryString($request)
     {
         if (!isset($request->server['QUERY_STRING'])) {
-            return
+            return;
         }
         $getParams = [];
         parse_str($request->server['QUERY_STRING'], $getParams);
