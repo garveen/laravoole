@@ -135,7 +135,8 @@ class Response
     {
         $out = '';
         if ($fastcgi) {
-            $out .= 'Status: ' . $this->http_status . ' ' . static::$HTTP_HEADERS[$this->http_status] . "\r\n";
+            $status = isset(static::$HTTP_HEADERS[$this->http_status]) ? static::$HTTP_HEADERS[$this->http_status] : 'Undefined Status Code';
+            $out .= 'Status: ' . $this->http_status . ' ' . $status . "\r\n";
         } else {
             //Protocol
             if (isset($this->header[0])) {
