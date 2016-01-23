@@ -50,7 +50,7 @@ class Parser
         }
         $getParams = [];
         parse_str($request->server['QUERY_STRING'], $getParams);
-        $req->get = empty($getParams) ? null : $getParams;
+        $request->get = empty($getParams) ? null : $getParams;
     }
 
     public static function parseBody($request)
