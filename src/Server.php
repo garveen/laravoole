@@ -1,12 +1,10 @@
 <?php
 namespace Laravoole;
 
-// use Laravoole\Wrapper\WorkermanFastCGIWrapper;
 use Exception;
 
 class Server
 {
-    // use Protocol\FastCGI;
 
     protected $wrapper;
 
