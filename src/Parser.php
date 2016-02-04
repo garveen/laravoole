@@ -99,7 +99,7 @@ class Parser
 
         do {
             $boundary_start = $current;
-            if($boundary_start > $rawContent_len) {
+            if ($boundary_start > $rawContent_len) {
                 break;
             }
 
@@ -152,7 +152,6 @@ class Parser
 
             } while ($rawContent[$current] != "\n");
 
-
             $current++;
             // $current pointed at the beginning of value
             $uploading = isset($meta['filename']);
@@ -171,7 +170,6 @@ class Parser
                 $item = &static::getVariableRegisterTarget($arr, $meta);
                 $item = $value;
                 unset($item);
-                // var_dump($arr);
 
                 $request->post += $arr;
 
@@ -189,7 +187,7 @@ class Parser
                     }
                     $found = strpos($buf, $boundary_next);
                     if ($found !== false) {
-                        if($buf[$found - 1] == "\r") {
+                        if ($buf[$found - 1] == "\r") {
                             $len = $found - 1;
                         } else {
                             $len = $found;
@@ -205,7 +203,6 @@ class Parser
                     }
                 } while ($found === false);
                 fclose($fp);
-
 
                 $value = [
                     'name' => $meta['filename'],
@@ -231,13 +228,12 @@ class Parser
                 }
             }
 
-
             $current += $boundary_next_len;
         } while (1);
 
     }
 
-    public static function & getVariableRegisterTarget(&$arr, $meta)
+    public static function &getVariableRegisterTarget(&$arr, $meta)
     {
         parse_str($meta['name'], $arr);
 
