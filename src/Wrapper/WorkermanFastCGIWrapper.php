@@ -14,6 +14,12 @@ class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
         $this->server = new Worker("tcp://{$host}:{$port}");
     }
 
+    public function start()
+    {
+        $this->config['deal_with_public'] = false;
+        parent::start();
+    }
+
 
     public function onReceive($connection, $data)
     {

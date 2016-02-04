@@ -15,7 +15,7 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
     public function start()
     {
         // override
-        $config['deal_with_public'] = false;
+        $this->config['deal_with_public'] = false;
 
         if (!empty($this->settings)) {
             $this->server->set($this->settings);
