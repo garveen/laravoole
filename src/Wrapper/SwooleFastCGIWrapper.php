@@ -4,7 +4,7 @@ namespace Laravoole\Wrapper;
 use Laravoole\Protocol\FastCGI;
 use swoole_server;
 
-class SwooleFastCGIWrapper extends SwooleHttpWrapper implements ServerInterface
+class SwooleFastCGIWrapper extends Swoole implements ServerInterface
 {
     use FastCGI;
     public function __construct($host, $port)

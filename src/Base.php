@@ -8,7 +8,6 @@ use Illuminate\Http\Request as IlluminateRequest;
 
 use Illuminate\Support\Facades\Facade;
 
-
 abstract class Base
 {
 
@@ -51,7 +50,7 @@ abstract class Base
 
             $illuminate_response = $kernel->handle($illuminate_request);
             // Is gzip enabled and the client accept it?
-            $accept_gzip = $this->gzip && isset($request->header['accept-encoding']) && stripos($request->header['accept-encoding'], 'gzip') !== false;
+            $accept_gzip = $this->gzip && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
 
             $this->dealWithResponse($response, $illuminate_response, $accept_gzip);
 
@@ -90,17 +89,6 @@ abstract class Base
         $files = isset($request->files) ? $request->files : array();
         // $attr = isset($request->files) ? $request->files : array();
 
-        // merge headers into server which ar filted by swoole
-        // make a new array when php 7 has different behavior on foreach
-        $new_header = [];
-        foreach ($header as $key => $value) {
-            $new_header['http_' . $key] = $value;
-        }
-        $server = array_merge($server, $new_header);
-
-        // swoole has changed all keys to lower case
-        $server = array_change_key_case($server, CASE_UPPER);
-
         $content = $request->rawContent() ?: null;
 
         $illuminate_request = new IlluminateRequest($get, $post, []/* attributes */, $cookie, $files, $server, $content);
@@ -138,7 +126,7 @@ abstract class Base
         if ($accept_gzip && isset($response->header['Content-Type'])) {
             $mime = $response->header['Content-Type'];
             if (strlen($content) > $this->gzip_min_length && is_mime_gzip($mime)) {
-                // $response->gzip($this->gzip);
+                $response->gzip($this->gzip);
             }
         }
         // send content & close
@@ -153,7 +141,7 @@ abstract class Base
             $public_path = $app->make('path.public');
 
         }
-        $uri = $request->server['request_uri'];
+        $uri = $request->server['REQUEST_URI'];
         $file = realpath($public_path . $uri);
         if (is_file($file)) {
             if (!strncasecmp($file, $uri, strlen($public_path))) {
@@ -161,7 +149,7 @@ abstract class Base
                 $response->end();
             } else {
                 $response->header('Content-Type', get_mime_type($file));
-                if(!filesize($file)) {
+                if (!filesize($file)) {
                     $response->end();
                 } else {
                     $response->sendfile($file);

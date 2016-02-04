@@ -75,12 +75,16 @@ class Response
 
     protected $protocol;
     protected $request;
+    protected $gzip_level = false;
 
     public function __construct($protocol, $request)
     {
         $this->protocol = $protocol;
         $this->request = $request;
         $this->request->response = $this;
+        $this->header = [
+            'Content-Type' => 'text/html',
+        ];
     }
 
     /**
@@ -89,7 +93,6 @@ class Response
      */
     public function status($code)
     {
-        // $this->header[0] = $this->http_protocol.' '.self::$HTTP_HEADERS[$code];
         $this->http_status = $code;
     }
 
@@ -100,7 +103,7 @@ class Response
      */
     public function header($key, $value)
     {
-        $this->header[$key] = $value;
+        $this->header[ucwords($key, '-')] = $value;
     }
 
     /**
@@ -146,16 +149,10 @@ class Response
                 $out = "HTTP/1.1 200 OK\r\n";
             }
         }
-        //fill header
-        if (!isset($this->header['Server'])) {
-            $this->header['Server'] = 'php';
-        }
-        if (!isset($this->header['Content-Type'])) {
-            $this->header['Content-Type'] = 'text/html'; //charset=
-        }
         if (!isset($this->header['Content-Length'])) {
             $this->header['Content-Length'] = strlen($this->body);
         }
+
         //Headers
         foreach ($this->header as $k => $v) {
             $out .= $k . ': ' . $v . "\r\n";
@@ -197,21 +194,27 @@ class Response
         $this->header['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0';
         $this->header['Pragma'] = 'no-cache';
     }
+
+    public function gzip($level)
+    {
+        $this->gzip_level = $level;
+    }
+
     public function end($content)
     {
+        if ($this->gzip_level) {
+            $content = gzencode($content, $this->gzip_level);
+            $this->header('Content-Encoding', 'gzip');
+        }
         $this->header('Content-Length', strlen($content));
         $out = $this->getHeader(true);
         $out .= $content;
         $protocol = $this->protocol;
         $protocol->response($this->request, $out);
     }
+
     public function sendfile($file)
     {
         $this->header['x-sendfile'] = $file;
     }
-}
-
-class ResponseException extends \Exception
-{
-
 }
