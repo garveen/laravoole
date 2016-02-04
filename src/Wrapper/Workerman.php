@@ -33,16 +33,8 @@ abstract class Workerman extends Base implements ServerInterface
         return [];
     }
 
-    public function start($config, $settings)
+    public function start()
     {
-        $this->host = $config['host'];
-        $this->port = $config['port'];
-        $this->pid_file = $config['pid_file'];
-        $this->root_dir = $config['root_dir'];
-        $this->gzip = $config['gzip'];
-        $this->gzip_min_length = $config['gzip_min_length'];
-
-        $this->settings = $settings;
 
         if (!empty($this->settings)) {
             $this->set($this->settings);
@@ -70,7 +62,7 @@ abstract class Workerman extends Base implements ServerInterface
         }
 
         $this->server = $worker;
-        require $this->root_dir . '/bootstrap/autoload.php';
+        require $this->config['root_dir'] . '/bootstrap/autoload.php';
         $this->app = $this->getApp();
 
         $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);

@@ -19,7 +19,6 @@ class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
     {
         $this->connections[$connection->id]['connection'] = $connection;
         $ret = $this->receive($connection->id, $data);
-        $this->closeConnection($connection->id);
         return $ret;
     }
 

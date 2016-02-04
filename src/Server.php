@@ -23,7 +23,8 @@ class Server
     {
         require __DIR__ . '/Mime.php';
         $wrapper = new $this->wrapper($config['host'], $config['port']);
-        $wrapper->start($config, $settings);
+        $wrapper->init($config, $settings);
+        $wrapper->start();
     }
 
 }

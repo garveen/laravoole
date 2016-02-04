@@ -12,12 +12,10 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
         $this->server = new swoole_server($host, $port);
     }
 
-    public function start($config, $settings)
+    public function start()
     {
         // override
         $config['deal_with_public'] = false;
-        parent::init($config);
-        $this->settings = $settings;
 
         if (!empty($this->settings)) {
             $this->server->set($this->settings);

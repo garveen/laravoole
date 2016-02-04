@@ -60,22 +60,11 @@ class Swoole extends Base implements ServerInterface
         ];
     }
 
-    protected function init($config)
-    {
-        $this->host = $config['host'];
-        $this->port = $config['port'];
-        $this->pid_file = $config['pid_file'];
-        $this->root_dir = $config['root_dir'];
-        $this->deal_with_public = $config['deal_with_public'];
-        $this->gzip = $config['gzip'];
-        $this->gzip_min_length = $config['gzip_min_length'];
-
-    }
     public function onServerStart()
     {
         // put pid
         file_put_contents(
-            $this->pid_file,
+            $this->config['pid_file'],
             $this->getPid()
         );
     }
@@ -87,7 +76,7 @@ class Swoole extends Base implements ServerInterface
             spl_autoload_unregister($function);
         }
 
-        require $this->root_dir . '/bootstrap/autoload.php';
+        require $this->config['root_dir'] . '/bootstrap/autoload.php';
         $this->app = $this->getApp();
 
         $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
@@ -96,7 +85,7 @@ class Swoole extends Base implements ServerInterface
 
     public function onServerShutdown($serv)
     {
-        unlink($this->pid_file);
+        unlink($this->config['pid_file']);
     }
 
     public static function getLogFile()

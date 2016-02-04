@@ -11,7 +11,8 @@ interface ServerInterface
      * @param  callable $callback event handler
      */
     public function on($event, callable $callback);
-    public function start($config, $settings);
+    public function start();
+    public function init($config, $settings);
     public function send($fd, $content);
     public function close($fd);
     public function getPid();

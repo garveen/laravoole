@@ -187,6 +187,7 @@ function start()
             'gzip' => env('LARAVOOLE_GZIP', 1),
             'gzip_min_length' => env('LARAVOOLE_GZIP_MIN_LENGTH', 1024),
             'mode' => $mode,
+            'server' => env('LARAVOOLE_SERVER', 'Laravoole'),
         ],
         'laravoole_settings' => $settings,
         'argv' => $argv,

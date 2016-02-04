@@ -10,34 +10,34 @@ use Illuminate\Support\Facades\Facade;
 
 abstract class Base
 {
-
-    protected $kernel;
-    protected $pid_file;
-    protected $root_dir;
-    protected $deal_with_public;
-    protected $gzip;
-    protected $gzip_min_length;
-    protected $host;
-    protected $port;
-
-    protected $tmp_autoloader;
+    protected $config;
 
     protected $settings;
+
+    protected $kernel;
+
+    protected $tmp_autoloader;
 
     protected $app;
 
     protected $server;
 
-    public function start($config, $settings)
+    public function start()
     {
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
+    }
+
+    final public function init($config, $settings)
+    {
+        $this->config = $config;
+        $this->settings = $settings;
     }
 
     public function onRequest($request, $response)
     {
         // for file system
         clearstatcache();
-        if ($this->deal_with_public) {
+        if ($this->config['deal_with_public']) {
             if ($this->dealWithPublic($request, $response)) {
                 return;
             }
@@ -50,7 +50,7 @@ abstract class Base
 
             $illuminate_response = $kernel->handle($illuminate_request);
             // Is gzip enabled and the client accept it?
-            $accept_gzip = $this->gzip && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
+            $accept_gzip = $this->config['gzip'] && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
 
             $this->dealWithResponse($response, $illuminate_response, $accept_gzip);
 
@@ -125,8 +125,8 @@ abstract class Base
         // check gzip
         if ($accept_gzip && isset($response->header['Content-Type'])) {
             $mime = $response->header['Content-Type'];
-            if (strlen($content) > $this->gzip_min_length && is_mime_gzip($mime)) {
-                $response->gzip($this->gzip);
+            if (strlen($content) > $this->config['gzip_min_length'] && is_mime_gzip($mime)) {
+                $response->gzip($this->config['gzip']);
             }
         }
         // send content & close
@@ -164,7 +164,7 @@ abstract class Base
     protected function getApp()
     {
 
-        $app = new App($this->root_dir);
+        $app = new App($this->config['root_dir']);
 
         $app->singleton(
             \Illuminate\Contracts\Http\Kernel::class,

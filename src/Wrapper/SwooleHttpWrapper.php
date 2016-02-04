@@ -12,11 +12,8 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
     }
 
 
-    public function start($config, $settings)
+    public function start()
     {
-        $this->init($config);
-        $this->settings = $settings;
-
         if (!empty($this->settings)) {
             $this->server->set($this->settings);
         }
