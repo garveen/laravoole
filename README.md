@@ -8,10 +8,10 @@ Laravel on Swoole Or Workerman
 
 <table>
 	<tr>
-		<td>php</td><td>>=5.5.9</td>
+		<td>php</td><td>>=5.5.16</td>
 	</tr>
 	<tr>
-		<td>laravel/framework</td><td>5.1.*</td>
+		<td>laravel/framework</td><td>5.1.* | 5.2.*</td>
 	</tr>
 </table>
 
