@@ -87,13 +87,19 @@ class SwooleWebSocket extends Base
 
         $data = json_decode($frame->data);
 
-        $request->request_uri = $data->m;
+        $request->server['request_uri'] = $data->m;
         $request->get = (array)($data->p);
 
         $illuminateRequest = static::dealWithRequest($request, IlluminateRequestWrapper::class);
+        if(isset($request->laravooleBackups)) {
+            foreach($request->laravooleBackups as $k => $v) {
+                $illuminateRequest->$k = $v;
+            }
+        }
 
         $response = new Response(static::class, $request);
         static::onRequest($request, $response, $illuminateRequest);
+        $request->laravooleBackups = $illuminateRequest->laravooleBackups;
 
     }
 
