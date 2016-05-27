@@ -34,7 +34,7 @@ abstract class Base
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
     }
 
-    public static function onRequest($request, $response)
+    public static function onRequest($request, $response, $illuminate_request = null)
     {
         // for file system
         clearstatcache();
@@ -47,7 +47,9 @@ abstract class Base
         try {
             $kernel = static::$kernel;
 
-            $illuminate_request = static::dealWithRequest($request);
+            if(!$illuminate_request) {
+                $illuminate_request = static::dealWithRequest($request);
+            }
 
             $illuminate_response = $kernel->handle($illuminate_request);
             // Is gzip enabled and the client accept it?
@@ -79,7 +81,7 @@ abstract class Base
 
     }
 
-    private static function dealWithRequest($request)
+    protected static function dealWithRequest($request, $classname = IlluminateRequest::class)
     {
 
         $get = isset($request->get) ? $request->get : array();
@@ -103,7 +105,7 @@ abstract class Base
 
         $content = $request->rawContent() ?: null;
 
-        $illuminate_request = new IlluminateRequest($get, $post, []/* attributes */, $cookie, $files, $server, $content);
+        $illuminate_request = new $classname($get, $post, []/* attributes */, $cookie, $files, $server, $content);
 
         return $illuminate_request;
     }
@@ -141,6 +143,11 @@ abstract class Base
                 // $response->gzip(static::$gzip);
             }
         }
+        static::endResponse($response, $content);
+    }
+
+    public static function endResponse($response, $content)
+    {
         // send content & close
         $response->end($content);
     }

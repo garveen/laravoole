@@ -2,24 +2,22 @@
 namespace Laravoole;
 
 use Laravoole\Wrapper\SwooleWebSocketWrapper;
+use Laravoole\Wrapper\IlluminateRequestWrapper;
 use swoole_websocket_server;
 
-class SwooleWebSocket
+
+class SwooleWebSocket extends Base
 {
     const WRAPPER = SwooleWebSocketWrapper::class;
 
-    protected $connections = [];
+    protected static $connections = [];
 
-    protected function init($config)
+    protected static function init($config)
     {
         static::$host = $config['host'];
         static::$port = $config['port'];
         static::$pid_file = $config['pid_file'];
         static::$root_dir = $config['root_dir'];
-        static::$deal_with_public = $config['deal_with_public'];
-        static::$gzip = $config['gzip'];
-        static::$gzip_min_length = $config['gzip_min_length'];
-
     }
 
     public static function start($config, $settings)
@@ -39,8 +37,6 @@ class SwooleWebSocket
         static::$server->on('Message', [static::class, 'onMessage']);
         static::$server->on('Close', [static::class, 'onClose']);
 
-        require __DIR__ . '/Mime.php';
-
         static::$server->start();
     }
 
@@ -55,6 +51,7 @@ class SwooleWebSocket
 
     public static function onWorkerStart($serv, $worker_id)
     {
+        static::$server = $serv;
         // unregister temporary autoloader
         foreach (spl_autoload_functions() as $function) {
             spl_autoload_unregister($function);
@@ -62,6 +59,8 @@ class SwooleWebSocket
 
         require static::$root_dir . '/bootstrap/autoload.php';
         static::$app = static::getApp();
+        // static::$app->boot();
+        // var_dump(static::$app->isBooted());
 
         static::$kernel = static::$app->make(\Illuminate\Contracts\Http\Kernel::class);
 
@@ -73,14 +72,40 @@ class SwooleWebSocket
     }
 
     public static function onOpen(swoole_websocket_server $server, $request) {
-        static::$connections[$request->fd] = new Connection($request);
+        $laravooleRequest = new Request($request->fd);
+        foreach($request as $k => $v) {
+            $laravooleRequest->$k = $v;
+        }
+        static::$connections[$request->fd] = $laravooleRequest;
+        $server->push($request->fd, getpid());
 
 
     }
 
     public static function onMessage(swoole_websocket_server $server, $frame) {
-        $connection = static::$connections[$frame->fd];
+        $request = static::$connections[$frame->fd];
 
+        $data = json_decode($frame->data);
+
+        $request->request_uri = $data->m;
+        $request->get = (array)($data->p);
+
+        $illuminateRequest = static::dealWithRequest($request, IlluminateRequestWrapper::class);
+
+        $response = new Response(static::class, $request);
+        static::onRequest($request, $response, $illuminateRequest);
+
+    }
+
+    public static function endResponse($response, $content)
+    {
+        static::$server->push($response->request->fd, $content);
+
+    }
+
+    public static function response($request, $out) {
+        fwrite(STDOUT, $out);
+        static::$server->push($request->fd, $out);
     }
 
     public static function onClose($server, $fd) {

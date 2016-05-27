@@ -74,7 +74,7 @@ class Response
     );
 
     protected $protocol;
-    protected $request;
+    public $request;
 
     public function __construct($protocol, $request)
     {
