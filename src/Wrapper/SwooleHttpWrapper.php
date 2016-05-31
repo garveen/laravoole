@@ -25,7 +25,13 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         $this->server->start();
     }
 
-    public function onRequest($request, $response)
+    public function onRequest($request, $response, $illuminate_request = false)
+    {
+        $request = $this->ucHeaders($request);
+        return parent::onRequest($request, $response, $illuminate_request);
+    }
+
+    protected function ucHeaders($request)
     {
         // merge headers into server which ar filted by swoole
         // make a new array when php 7 has different behavior on foreach
@@ -41,7 +47,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         $server = array_change_key_case($server, CASE_UPPER);
         $request->server = $server;
         $request->header = $uc_header;
-        return parent::onRequest($request, $response);
+        return $request;
     }
 
 }

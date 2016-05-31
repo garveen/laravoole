@@ -33,7 +33,7 @@ abstract class Base
         $this->settings = $settings;
     }
 
-    public function onRequest($request, $response)
+    public function onRequest($request, $response, $illuminate_request = false)
     {
         // for file system
         clearstatcache();
@@ -131,10 +131,10 @@ abstract class Base
                 $response->gzip($this->config['gzip']);
             }
         }
-        static::endResponse($response, $content);
+        $this->endResponse($response, $content);
     }
 
-    public static function endResponse($response, $content)
+    public function endResponse($response, $content)
     {
         // send content & close
         $response->end($content);
