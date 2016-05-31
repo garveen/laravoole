@@ -1,8 +1,8 @@
 {
     "name": "acabin/laravoole",
-    "description": "Laravel & Swoole",
+    "description": "Get 10x performance for Laravel on Swoole or Workerman",
     "type": "library",
-    "keywords": ["laravel","swoole"],
+    "keywords": ["laravel","swoole","workerman"],
     "license": "MIT",
     "authors": [
         {
@@ -11,7 +11,7 @@
         }
     ],
     "require": {
-        "php": ">=5.5.9",
+        "php": ">=5.5.16",
         "laravel/framework": "5.1.* || 5.2.*",
         "ext-posix": "*"
     },
@@ -21,8 +21,8 @@
     },
     "bin": ["laravoole"],
     "autoload": {
-        "psr-0": {
-            "Laravoole": "src/"
+        "psr-4": {
+            "Laravoole\\": "src/"
         }
     }
 }

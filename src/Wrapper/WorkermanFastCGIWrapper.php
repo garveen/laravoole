@@ -2,74 +2,30 @@
 namespace Laravoole\Wrapper;
 
 use Workerman\Worker;
+use Laravoole\Protocol\FastCGI;
 
-class WorkermanFastCGIWrapper implements ServerInterface
+class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
 {
-    static $params = [
-        'name',
-        'user',
-        'reloadable',
-        'transport',
-        'daemonize',
-        'stdoutFile',
-        'pidFile',
-        'reusePort',
-    ];
+    use FastCGI;
 
-    static $defaults = [];
-
-    protected $server;
-    protected $eventMapper = [
-        'WorkerStart' => 'onWorkerStart',
-        'WorkerStop' => 'onWorkerStop',
-        'Connect' => 'onConnect',
-        'Receive' => 'onMessage',
-        'Close' => 'onClose',
-    ];
-    protected $onStart;
     public function __construct($host, $port)
     {
         require dirname(COMPOSER_INSTALLED) . '/workerman/workerman/Autoloader.php';
         $this->server = new Worker("tcp://{$host}:{$port}");
     }
 
-    public function on($event, callable $callback)
-    {
-        if (!isset($this->eventMapper[$event])) {
-            throw new \Exception("Event $event not exists", 1);
-        }
-
-        $this->server->{$this->eventMapper[$event]} = $callback;
-        return true;
-    }
-
-    public function set($settings)
-    {
-        $server = $this->server;
-        foreach ($settings as $key => $value) {
-            $server::$$key = $value;
-        }
-        return true;
-    }
-
     public function start()
     {
-        return $this->server->runAll();
+        $this->config['deal_with_public'] = false;
+        parent::start();
     }
 
-    public function send($fd, $content)
+
+    public function onReceive($connection, $data)
     {
-        return $this->server->connections[$fd]->send($content);
+        $this->connections[$connection->id]['connection'] = $connection;
+        $ret = $this->receive($connection->id, $data);
+        return $ret;
     }
 
-    public function close($fd)
-    {
-        return $this->server->connections[$fd]->close();
-    }
-
-    public function getPid()
-    {
-        throw new \Exception("Can't read pid from Workerman", 1);
-
-    }
 }

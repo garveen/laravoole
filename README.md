@@ -8,10 +8,10 @@ Laravel on Swoole Or Workerman
 
 <table>
 	<tr>
-		<td>php</td><td>>=5.5.9</td>
+		<td>php</td><td>>=5.5.16</td>
 	</tr>
 	<tr>
-		<td>laravel/framework</td><td>5.1.*</td>
+		<td>laravel/framework</td><td>5.1.* | 5.2.*</td>
 	</tr>
 </table>
 
@@ -125,12 +125,13 @@ server {
 
 	root /path/to/laravel/public;
 
-	location ~ \.(png|jpeg|jpg|gif|css|js)$ {
-		break;
-	}
+	location / {
+            try_files $uri $uri/ @laravoole;
+            index  index.html index.htm index.php;
+        }
 
 	# proxy
-	location / {
+	location @laravoole {
 		proxy_set_header   Host $host:$server_port;
 		proxy_set_header   X-Real-IP $remote_addr;
 		proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -140,7 +141,7 @@ server {
 	}
 
 	# fastcgi
-	location / {
+	location @laravoole {
 		include fastcgi_params;
 		fastcgi_pass 127.0.0.1:9050;
 	}

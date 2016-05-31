@@ -9,54 +9,44 @@ use Exception;
 trait FastCGI
 {
 
-    protected static $lowMark = 8; // initial value of the minimal amout of bytes in buffer
-    protected static $highMark = 0xFFFFFF; // initial value of the maximum amout of bytes in buffer
-    public static $timeout = 180;
+    protected $lowMark = 8; // initial value of the minimal amout of bytes in buffer
+    protected $highMark = 0xFFFFFF; // initial value of the maximum amout of bytes in buffer
+    public $timeout = 180;
 
-    static $HEADER_LENGTH = 8;
+    public $HEADER_LENGTH = 8;
 
-    static $FCGI_BEGIN_REQUEST = 1;
-    static $FCGI_ABORT_REQUEST = 2;
-    static $FCGI_END_REQUEST = 3;
-    static $FCGI_PARAMS = 4;
-    static $FCGI_STDIN = 5;
-    static $FCGI_STDOUT = 6;
-    static $FCGI_STDERR = 7;
-    static $FCGI_DATA = 8;
-    static $FCGI_GET_VALUES = 9;
-    static $FCGI_GET_VALUES_RESULT = 10;
-    static $FCGI_UNKNOWN_TYPE = 11;
+    public $FCGI_BEGIN_REQUEST = 1;
+    public $FCGI_ABORT_REQUEST = 2;
+    public $FCGI_END_REQUEST = 3;
+    public $FCGI_PARAMS = 4;
+    public $FCGI_STDIN = 5;
+    public $FCGI_STDOUT = 6;
+    public $FCGI_STDERR = 7;
+    public $FCGI_DATA = 8;
+    public $FCGI_GET_VALUES = 9;
+    public $FCGI_GET_VALUES_RESULT = 10;
+    public $FCGI_UNKNOWN_TYPE = 11;
 
-    static $FCGI_RESPONDER = 1;
-    static $FCGI_AUTHORIZER = 2;
-    static $FCGI_FILTER = 3;
+    public $FCGI_RESPONDER = 1;
+    public $FCGI_AUTHORIZER = 2;
+    public $FCGI_FILTER = 3;
 
-    static $FCGI_KEEP_CONN = 1;
+    public $FCGI_KEEP_CONN = 1;
 
-    protected static $roles = [
+    protected $roles = [
         1 => 'FCGI_RESPONDER',
         2 => 'FCGI_AUTHORIZER',
         3 => 'FCGI_FILTER',
     ];
 
-    static $STATE_HEADER = 0;
-    static $STATE_BODY = 1;
-    static $STATE_PADDING = 2;
+    public $STATE_HEADER = 0;
+    public $STATE_BODY = 1;
+    public $STATE_PADDING = 2;
 
-    static $requests = [];
-    static $connections = [];
+    public $requests = [];
+    public $connections = [];
 
-    protected static function close($fd)
-    {
-        throw new Exception(__CLASS__ . "::close MUST be implemented", 1);
-    }
-
-    protected static function send($fd, $content)
-    {
-        throw new Exception(__CLASS__ . "::send MUST be implemented", 1);
-    }
-
-    public static function parseRecord($data)
+    public function parseRecord($data)
     {
         $records = array();
         while (strlen($data)) {
@@ -83,59 +73,59 @@ trait FastCGI
         return array('records' => $records, 'remainder' => $data);
     }
 
-    public static function receive($fd, $data)
+    public function receive($fd, $data)
     {
 
-        if (!isset(static::$connections[$fd]['buff'])) {
-            static::$connections[$fd]['buff'] = '';
+        if (!isset($this->connections[$fd]['buff'])) {
+            $this->connections[$fd]['buff'] = '';
         } else {
-            $data = static::$connections[$fd]['buff'] . $data;
+            $data = $this->connections[$fd]['buff'] . $data;
         }
-        if (!isset(static::$connections[$fd]['length'])) {
+        if (!isset($this->connections[$fd]['length'])) {
             $pack = substr($data, 4, 3);
             $info = unpack('ncontentLength/CpaddingLength', $pack);
-            static::$connections[$fd]['length'] = 8 + $info['contentLength'] + $info['paddingLength'];
+            $this->connections[$fd]['length'] = 8 + $info['contentLength'] + $info['paddingLength'];
         }
 
-        if (static::$connections[$fd]['length'] <= strlen($data)) {
-            $result = static::parseRecord($data);
+        if ($this->connections[$fd]['length'] <= strlen($data)) {
+            $result = $this->parseRecord($data);
 
-            static::$connections[$fd]['buff'] = $result['remainder'];
-            static::$connections[$fd]['length'] = null;
+            $this->connections[$fd]['buff'] = $result['remainder'];
+            $this->connections[$fd]['length'] = null;
         } else {
-            static::$connections[$fd]['buff'] = $data;
+            $this->connections[$fd]['buff'] = $data;
             return;
         }
 
         if (count($result['records']) == 0) {
             fwrite(STDOUT, "Bad Request. data length: " . strlen($data));
-            static::closeConnection($fd);
+            $this->closeConnection($fd);
             return;
         }
         foreach ($result['records'] as $record) {
             $rid = $record['requestId'];
             $type = $record['type'];
 
-            if ($type == static::$FCGI_BEGIN_REQUEST) {
-                $req = static::$requests[$rid] = new Request($fd);
+            if ($type == $this->FCGI_BEGIN_REQUEST) {
+                $req = $this->requests[$rid] = new Request($fd);
                 $req->id = $rid;
                 $u = unpack('nrole/Cflags', $record['contentData']);
-                $req->attrs->role = static::$roles[$u['role']];
+                $req->attrs->role = $this->roles[$u['role']];
                 $req->attrs->flags = $u['flags'];
-                static::$connections[$fd]['request'] = $req;
-            } elseif (isset(static::$requests[$rid])) {
-                $req = static::$requests[$rid];
+                $this->connections[$fd]['request'] = $req;
+            } elseif (isset($this->requests[$rid])) {
+                $req = $this->requests[$rid];
             } else {
                 fwrite(STDOUT, "Unexpected FastCGI-record #. Request ID: $fd\n");
                 return;
             }
 
-            if ($type == static::$FCGI_ABORT_REQUEST) {
+            if ($type == $this->FCGI_ABORT_REQUEST) {
                 $req->destoryTempFiles();
 
-                static::closeConnection($fd);
+                $this->closeConnection($fd);
 
-            } elseif ($type == static::$FCGI_PARAMS) {
+            } elseif ($type == $this->FCGI_PARAMS) {
                 if (!$record['contentLength']) {
 
                     $req->finishParams();
@@ -162,7 +152,7 @@ trait FastCGI
                         $p += $namelen + $vlen;
                     }
                 }
-            } elseif ($type === static::$FCGI_STDIN) {
+            } elseif ($type === $this->FCGI_STDIN) {
                 if ($record['contentLength']) {
                     $req->setRawContent($record['contentData']);
                     continue;
@@ -180,11 +170,12 @@ trait FastCGI
                 }
 
                 $req->header = $header;
+                Parser::parseQueryString($req);
                 Parser::parseCookie($req);
                 Parser::parseBody($req);
 
-                $response = new Response(static::class, $req);
-                static::onRequest($req, $response);
+                $response = new Response($this, $req);
+                $this->onRequest($req, $response);
                 // destory tmp files
                 $req->destoryTempFiles();
 
@@ -199,25 +190,25 @@ trait FastCGI
      * @param string The output.
      * @return boolean Success
      */
-    public static function response($req, $out)
+    public function response($req, $out)
     {
         $chunksize = 65520;
         do {
             if (strlen($out) > $chunksize) {
                 while (($ol = strlen($out)) > 0) {
                     $l = min($chunksize, $ol);
-                    if (static::sendChunk($req, substr($out, 0, $l)) === false) {
+                    if ($this->sendChunk($req, substr($out, 0, $l)) === false) {
                         fwrite(STDOUT, "send response failed.\n");
                         break 2;
                     }
                     $out = substr($out, $l);
                 }
-            } elseif (static::sendChunk($req, $out) === false) {
+            } elseif ($this->sendChunk($req, $out) === false) {
                 fwrite(STDOUT, "send response failed.\n");
                 break;
             }
         } while (false);
-        static::endRequest($req, 0, 0);
+        $this->endRequest($req, 0, 0);
 
         return true;
     }
@@ -228,7 +219,7 @@ trait FastCGI
      * @param $chunk
      * @return bool
      */
-    public static function sendChunk($req, $chunk)
+    public function sendChunk($req, $chunk)
     {
         $paddingLength = 8 - strlen($chunk) % 8;
         $payload = "\x01" // protocol version
@@ -238,7 +229,7 @@ trait FastCGI
          . $chunk // content
          . str_repeat("\0", $paddingLength);
 
-        return static::send($req->fd, $payload);
+        return $this->send($req->fd, $payload);
     }
 
     /**
@@ -248,7 +239,7 @@ trait FastCGI
      * @param $protoStatus
      * @return void
      */
-    public static function endRequest($req, $appStatus = 0, $protoStatus = 0)
+    public function endRequest($req, $appStatus = 0, $protoStatus = 0)
     {
         $content = pack('NC', $appStatus, $protoStatus) // app status, protocol status
          . "\x00\x00\x00";
@@ -261,24 +252,24 @@ trait FastCGI
          . $content // content
          . str_repeat("\0", $paddingLength);
 
-        static::send($req->fd, $payload);
+        $this->send($req->fd, $payload);
         $req->destoryTempFiles();
 
-        if ($protoStatus === -1 || !($req->attrs->flags & static::$FCGI_KEEP_CONN)) {
-            static::closeConnection($req->fd);
+        if ($protoStatus === -1 || !($req->attrs->flags & $this->FCGI_KEEP_CONN)) {
+            $this->closeConnection($req->fd);
         }
     }
 
-    public static function closeConnection($fd)
+    public function closeConnection($fd)
     {
-        if (isset(static::$connections[$fd]['request'])) {
-            $request = static::$connections[$fd]['request'];
+        if (isset($this->connections[$fd]['request'])) {
+            $request = $this->connections[$fd]['request'];
             $request->destoryTempFiles();
 
-            unset(static::$requests[$request->id]);
+            unset($this->requests[$request->id]);
         }
-        static::close($fd);
-        unset(static::$connections[$fd]);
+        $this->close($fd);
+        unset($this->connections[$fd]);
 
     }
 

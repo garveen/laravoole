@@ -3,92 +3,45 @@ namespace Laravoole\Wrapper;
 
 use swoole_http_server;
 
-class SwooleHttpWrapper implements ServerInterface
+class SwooleHttpWrapper extends Swoole implements ServerInterface
 {
-    // http://wiki.swoole.com/wiki/page/274.html
-    static $params = [
-        'reactor_num',
-        'worker_num',
-        'max_request',
-        'max_conn',
-        'task_worker_num',
-        'task_ipc_mode',
-        'task_max_request',
-        'task_tmpdir',
-        'dispatch_mode',
-        'message_queue_key',
-        'daemonize',
-        'backlog',
-        'log_file',
-        'heartbeat_check_interval',
-        'heartbeat_idle_time',
-        'open_eof_check',
-        'open_eof_split',
-        'package_eof',
-        'open_length_check',
-        'package_length_type',
-        'package_max_length',
-        'open_cpu_affinity',
-        'cpu_affinity_ignore',
-        'open_tcp_nodelay',
-        'tcp_defer_accept',
-        'ssl_cert_file',
-        'ssl_method',
-        'user',
-        'group',
-        'chroot',
-        'pipe_buffer_size',
-        'buffer_output_size',
-        'enable_unsafe_event',
-        'discard_timeout_request',
-        'enable_reuse_port',
-    ];
-
-    static $defaults = [
-        'log_file' => [self::class, 'getLogFile'],
-        'daemonize' => 1,
-        'max_request' => 2000,
-    ];
-
-    protected $server;
 
     public function __construct($host, $port)
     {
         $this->server = new swoole_http_server($host, $port);
     }
 
-    public static function getLogFile()
-    {
-        return app()->storagePath() . '/logs/laravoole.log';
-    }
-
-    public function on($event, callable $callback)
-    {
-        return $this->server->on($event, $callback);
-    }
-
-    public function set($settings)
-    {
-        return $this->server->set($settings);
-    }
 
     public function start()
     {
-        return $this->server->start();
+        if (!empty($this->settings)) {
+            $this->server->set($this->settings);
+        }
+        $this->server->on('Start', [$this, 'onServerStart']);
+        $this->server->on('Shutdown', [$this, 'onServerShutdown']);
+        $this->server->on('WorkerStart', [$this, 'onWorkerStart']);
+        $this->server->on('Request', [$this, 'onRequest']);
+
+        $this->server->start();
     }
 
-    public function send($fd, $content)
+    public function onRequest($request, $response)
     {
-        return $this->server->send($fd, $content);
+        // merge headers into server which ar filted by swoole
+        // make a new array when php 7 has different behavior on foreach
+        $new_header = [];
+        $uc_header = [];
+        foreach ($request->header as $key => $value) {
+            $new_header['http_' . $key] = $value;
+            $uc_header[ucwords($key, '-')] = $value;
+        }
+        $server = array_merge($request->server, $new_header);
+
+        // swoole has changed all keys to lower case
+        $server = array_change_key_case($server, CASE_UPPER);
+        $request->server = $server;
+        $request->header = $uc_header;
+        return parent::onRequest($request, $response);
     }
 
-    public function close($fd)
-    {
-        return $this->server->close($fd);
-    }
-
-    public function getPid()
-    {
-        return $this->server->master_pid;
-    }
 }

@@ -45,9 +45,9 @@ function main()
             $construct_config = unserialize($input);
 
             $argv = $construct_config['argv'];
-            $server = "Laravoole\\{$construct_config['config']['mode']}";
+            $server = new Laravoole\Server($construct_config['config']['mode']);
 
-            $server::start($construct_config['config'], $construct_config['laravoole_settings']);
+            $server->start($construct_config['config'], $construct_config['laravoole_settings']);
 
         }
     } else {
@@ -153,10 +153,9 @@ function start()
         }
     });
 
-    $reflection = new ReflectionClass("Laravoole\\$mode");
-    $wrapper = $reflection->getConstant('WRAPPER');
+    $wrapper = "Laravoole\\Wrapper\\{$mode}Wrapper";
 
-    $settings = $wrapper::$defaults;
+    $settings = $wrapper::getDefaults();
     foreach ($settings as $key => $value) {
         if (is_array($value)) {
             $settings[$key] = $value();
@@ -165,7 +164,7 @@ function start()
         }
     }
 
-    foreach ($wrapper::$params as $param) {
+    foreach ($wrapper::getParams() as $param) {
         $key = 'LARAVOOLE_' . strtoupper($param);
         $value = env($key);
         if ($value !== null) {
@@ -188,6 +187,7 @@ function start()
             'gzip' => env('LARAVOOLE_GZIP', 1),
             'gzip_min_length' => env('LARAVOOLE_GZIP_MIN_LENGTH', 1024),
             'mode' => $mode,
+            'server' => env('LARAVOOLE_SERVER', 'Laravoole'),
         ],
         'laravoole_settings' => $settings,
         'argv' => $argv,
