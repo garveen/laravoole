@@ -13,8 +13,6 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         $this->server = new swoole_websocket_server($host, $port);
     }
 
-    const WRAPPER = SwooleWebSocketWrapper::class;
-
     protected $connections = [];
 
     public function start()
@@ -50,34 +48,33 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
         $data = json_decode($frame->data);
 
-        $request->server['request_uri'] = $data->m;
+        $request->method = $request->server['request_uri'] = $data->m;
         $request->get = (array) ($data->p);
+        $request->echo = isset($data->e) ? $data->e : null;
         $request = $this->ucHeaders($request);
 
         $response = new Response($this, $request);
 
         $illuminateRequest = $this->dealWithRequest($request, IlluminateRequestWrapper::class);
-        if (isset($request->laravooleBackups)) {
-            foreach ($request->laravooleBackups as $k => $v) {
-                $illuminateRequest->$k = $v;
-            }
-        }
 
+        if (isset($request->userResolver) && $request->userResolver) {
+            $illuminateRequest->macro('laravooleUserResolver', $request->userResolver);
+        }
         $this->onRequest($request, $response, $illuminateRequest);
-        $request->laravooleBackups = $illuminateRequest->laravooleBackups;
+        if ($illuminateRequest->laravooleIssetUserResolver) {
+            $request->userResolver = $illuminateRequest->laravooleIssetUserResolver;
+        }
 
     }
 
     public function endResponse($response, $content)
     {
-        $this->server->push($response->request->fd, $content);
+        $this->server->push($response->request->fd, json_encode([
+            'm' => $response->request->method,
+            'p' => $content,
+            'e' => $response->request->echo,
+        ]));
 
-    }
-
-    public function response($request, $out)
-    {
-        fwrite(STDOUT, $out);
-        $this->server->push($request->fd, $out);
     }
 
     public function onClose($server, $fd)

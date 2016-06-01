@@ -70,7 +70,7 @@ abstract class Base
                 $illuminate_request->getSession()->clear();
             }
 
-            if ($this->app->isProviderLoaded(Illuminate\Auth\AuthServiceProvider::class)) {
+            if ($this->app->isProviderLoaded(\Illuminate\Auth\AuthServiceProvider::class)) {
                 $this->app->register(\Illuminate\Auth\AuthServiceProvider::class, [], true);
                 Facade::clearResolvedInstance('auth');
             }

@@ -3,14 +3,16 @@
 namespace Laravoole\Wrapper;
 
 use Illuminate\Http\Request;
+use Closure;
 
 class IlluminateRequestWrapper extends Request
 {
-	public $laravooleBackups = [];
-	public function __set($name, $value)
-	{
-		$this->laravooleBackups[$name] = $value;
-		$this->$name = $value;
-		return $value;
-	}
+    public $laravooleIssetUserResolver = false;
+
+    public function setLaravooleUserResolver(Closure $callback)
+    {
+        $this->laravooleIssetUserResolver = $callback;
+        return parent::setUserResolver($callback);
+    }
+
 }
