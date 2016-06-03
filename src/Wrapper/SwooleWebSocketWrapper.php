@@ -38,7 +38,6 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             $laravooleRequest->$k = $v;
         }
         $this->connections[$request->fd] = $laravooleRequest;
-        $server->push($request->fd, getpid());
 
     }
 
@@ -70,6 +69,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
     public function endResponse($response, $content)
     {
         $this->server->push($response->request->fd, json_encode([
+            's' => $response->http_status,
             'm' => $response->request->method,
             'p' => $content,
             'e' => $response->request->echo,
