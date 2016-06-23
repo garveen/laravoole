@@ -50,11 +50,11 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
     {
         $data = json_decode($frame->data);
 
-        return $this->dispatch($frame->fd, $frame->data);
+        return $this->dispatch($server, $frame->fd, $data);
 
     }
 
-    protected function dispatch($fd, $data)
+    protected function dispatch($server, $fd, $data)
     {
         $request = $this->connections[$fd];
 
@@ -66,6 +66,14 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         $response = new Response($this, $request);
 
         $illuminateRequest = $this->dealWithRequest($request, IlluminateRequestWrapper::class);
+
+        $illuminateRequest->macro('getSwooleFd', function() use ($fd) {
+            return $fd;
+        });
+
+        $illuminateRequest->macro('getSwooleServer', function() use ($server) {
+            return $server;
+        });
 
         if (isset($request->userResolver) && $request->userResolver) {
             $illuminateRequest->macro('laravooleUserResolver', $request->userResolver);
@@ -94,7 +102,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             $data->m = $this->settings['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'];
             $data->p = [];
             $data->e = null;
-            $this->dispatch($fd, $data);
+            $this->dispatch($server, $fd, $data);
         }
         unset($this->connections[$fd]);
     }
