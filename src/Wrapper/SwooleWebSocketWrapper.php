@@ -15,6 +15,11 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     protected $connections = [];
 
+    public static function getDefaults()
+    {
+        return array_merge(parent::getDefaults(), ['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK' => null]);
+    }
+
     public function start()
     {
         if (!empty($this->settings)) {
@@ -43,9 +48,15 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function onMessage(swoole_websocket_server $server, $frame)
     {
-        $request = $this->connections[$frame->fd];
-
         $data = json_decode($frame->data);
+
+        return $this->dispatch($frame->fd, $frame->data);
+
+    }
+
+    protected function dispatch($fd, $data)
+    {
+        $request = $this->connections[$fd];
 
         $request->method = $request->server['request_uri'] = $data->m;
         $request->get = (array) ($data->p);
@@ -63,7 +74,6 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         if ($illuminateRequest->laravooleIssetUserResolver) {
             $request->userResolver = $illuminateRequest->laravooleIssetUserResolver;
         }
-
     }
 
     public function endResponse($response, $content)
@@ -79,6 +89,13 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function onClose($server, $fd)
     {
+        if (isset($this->settings['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'])) {
+            $data = new \stdClass;
+            $data->m = $this->settings['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'];
+            $data->p = [];
+            $data->e = null;
+            $this->dispatch($fd, $data);
+        }
         unset($this->connections[$fd]);
     }
 
