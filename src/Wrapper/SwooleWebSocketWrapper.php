@@ -14,6 +14,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
     }
 
     protected $connections = [];
+    protected $unfinished = [];
 
     public static function getDefaults()
     {
@@ -43,12 +44,19 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             $laravooleRequest->$k = $v;
         }
         $this->connections[$request->fd] = $laravooleRequest;
+        $this->unfinished[$request->fd] = '';
 
     }
 
     public function onMessage(swoole_websocket_server $server, $frame)
     {
-        $data = json_decode($frame->data);
+        $this->unfinished[$frame->fd] .= $frame->data;
+        if(!$frame->finish) {
+            return;
+        }
+        $data = json_decode($this->unfinished[$frame->fd]);
+
+        $this->unfinished[$frame->fd] = '';
 
         return $this->dispatch($server, $frame->fd, $data);
 
@@ -97,6 +105,8 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function onClose($server, $fd)
     {
+        unset($this->unfinished[$frame->fd]);
+        unset($this->connections[$fd]);
         if (isset($this->settings['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'])) {
             $data = new \stdClass;
             $data->m = $this->settings['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'];
@@ -104,7 +114,6 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             $data->e = null;
             $this->dispatch($server, $fd, $data);
         }
-        unset($this->connections[$fd]);
     }
 
 }
