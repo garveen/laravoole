@@ -105,7 +105,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function onClose($server, $fd)
     {
-        unset($this->unfinished[$frame->fd]);
+        unset($this->unfinished[$fd]);
         unset($this->connections[$fd]);
         if (isset($this->settings['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'])) {
             $data = new \stdClass;
