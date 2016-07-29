@@ -50,6 +50,9 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function onMessage(swoole_websocket_server $server, $frame)
     {
+        if (!isset($this->unfinished[$frame->fd])) {
+            return false;
+        }
         $this->unfinished[$frame->fd] .= $frame->data;
         if(!$frame->finish) {
             return;
