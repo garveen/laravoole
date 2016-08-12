@@ -2,6 +2,8 @@
 namespace Laravoole\Wrapper;
 
 use swoole_websocket_server;
+use swoole_http_request;
+use swoole_http_response;
 
 use Laravoole\Request;
 use Laravoole\Response;
@@ -15,6 +17,9 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     protected $connections = [];
     protected $unfinished = [];
+    protected $protocolCodecs = [
+        'json' => SwooleWebSocketCodecJson::class,
+    ];
 
     public static function getDefaults()
     {
@@ -30,21 +35,46 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         $this->server->on('Start', [$this, 'onServerStart']);
         $this->server->on('Shutdown', [$this, 'onServerShutdown']);
         $this->server->on('WorkerStart', [$this, 'onWorkerStart']);
-        $this->server->on('Open', [$this, 'onOpen']);
+        $this->server->on('HandShake', [$this, 'onHandShake']);
+        // $this->server->on('Open', [$this, 'onOpen']);
         $this->server->on('Message', [$this, 'onMessage']);
         $this->server->on('Close', [$this, 'onClose']);
 
         $this->server->start();
     }
 
-    public function onOpen(swoole_websocket_server $server, $request)
+    public function onHandShake(swoole_http_request $request, swoole_http_response $response)
     {
+        $protocol = 'json';
+        if(isset($request->header['sec-websocket-protocol'])) {
+            $protocols = $request->header['sec-websocket-protocol'];
+            $protocols = array_intersect(preg_split('~,\s*~', $protocols), array_keys($this->protocolCodecs));
+            if(!empty($protocols)) {
+                $protocol = $protocols[0];
+                $response->header('Sec-WebSocket-Protocol', $protocol);
+            }
+        }
+
+        $secKey = $request->header['sec-websocket-key'];
+        $secAccept = base64_encode(pack('H*', sha1($secKey . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+
+        foreach ([
+            "Upgrade" => "websocket",
+            "Connection" => "Upgrade",
+            "Sec-WebSocket-Version" => "13",
+            "Sec-WebSocket-Accept" => $secAccept,
+        ] as $k => $v) {
+            $response->header($k, $v);
+        }
+        $response->status(101);
+
         $laravooleRequest = new Request($request->fd);
         foreach ($request as $k => $v) {
             $laravooleRequest->$k = $v;
         }
-        $this->connections[$request->fd] = $laravooleRequest;
+        $this->connections[$request->fd] = ['request' => $laravooleRequest, 'protocol' => $this->protocolCodecs[$protocol]];
         $this->unfinished[$request->fd] = '';
+        return true;
 
     }
 
@@ -54,10 +84,10 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             return false;
         }
         $this->unfinished[$frame->fd] .= $frame->data;
-        if(!$frame->finish) {
+        if (!$frame->finish) {
             return;
         }
-        $data = json_decode($this->unfinished[$frame->fd]);
+        $data = $this->connections[$frame->fd]['protocol']::decode($this->unfinished[$frame->fd]);
 
         $this->unfinished[$frame->fd] = '';
 
@@ -67,42 +97,40 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     protected function dispatch($server, $fd, $data)
     {
-        $request = $this->connections[$fd];
+        $request = $this->connections[$fd]['request'];
 
-        $request->method = $request->server['request_uri'] = $data->m;
-        $request->get = (array) ($data->p);
-        $request->echo = isset($data->e) ? $data->e : null;
+        $request->method = $request->server['request_uri'] = $data['method'];
+        $request->get = (array) ($data['params']);
+        $request->echo = isset($data['echo']) ? $data['echo'] : null;
         $request = $this->ucHeaders($request);
 
         $response = new Response($this, $request);
 
-        $illuminateRequest = $this->dealWithRequest($request, IlluminateRequestWrapper::class);
+        $illuminateRequest = $this->dealWithRequest($request);
 
-        $illuminateRequest->macro('getSwooleFd', function() use ($fd) {
-            return $fd;
-        });
-
-        $illuminateRequest->macro('getSwooleServer', function() use ($server) {
-            return $server;
-        });
-
-        if (isset($request->userResolver) && $request->userResolver) {
-            $illuminateRequest->macro('laravooleUserResolver', $request->userResolver);
+        if (isset($request->laravooleInfo)) {
+            $illuminateRequest->setLaravooleInfo($request->laravooleInfo);
+        } else {
+            $illuminateRequest->setLaravooleInfo((object) [
+                'fd' => $fd,
+                'server' => $server,
+            ]);
         }
+
         $this->onRequest($request, $response, $illuminateRequest);
-        if ($illuminateRequest->laravooleIssetUserResolver) {
-            $request->userResolver = $illuminateRequest->laravooleIssetUserResolver;
-        }
+
+        $request->laravooleInfo = $illuminateRequest->getLaravooleInfo();
     }
 
     public function endResponse($response, $content)
     {
-        $this->server->push($response->request->fd, json_encode([
-            's' => $response->http_status,
-            'm' => $response->request->method,
-            'p' => $content,
-            'e' => $response->request->echo,
-        ]));
+        $data = $this->connections[$response->request->fd]['protocol']::encode(
+            $response->http_status,
+            $response->request->method,
+            $content,
+            $response->request->echo
+        );
+        $this->server->push($response->request->fd, $data);
 
     }
 

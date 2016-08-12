@@ -34,7 +34,7 @@ Laravel on Swoole Or Workerman
 ---------
 
 ```shell
- composer require acabin/laravoole
+ composer require garveen/laravoole
 ```
 
 ##Usage
