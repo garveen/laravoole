@@ -7,12 +7,31 @@ use Closure;
 
 class IlluminateRequestWrapper extends Request
 {
-    public $laravooleIssetUserResolver = false;
+    protected $laravooleInfo;
 
-    public function setLaravooleUserResolver(Closure $callback)
+    public function setLaravooleInfo($info)
     {
-        $this->laravooleIssetUserResolver = $callback;
-        return parent::setUserResolver($callback);
+        if (!$this->laravooleInfo) {
+            $this->laravooleInfo = (object) $info;
+        } else {
+            foreach ($info as $k => $v) {
+                $this->laravooleInfo->k = $v;
+            }
+        }
+    }
+
+    public function getLaravooleInfo()
+    {
+        return $this->laravooleInfo;
+    }
+
+    public function forceNextMessageRoute($method, $params = [])
+    {
+        $this->laravooleInfo->nextMessageRoute = [
+            'method' => $method,
+            'params' => $params,
+            'previous' => $this,
+        ];
     }
 
 }

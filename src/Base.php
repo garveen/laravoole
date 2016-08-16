@@ -4,7 +4,7 @@ namespace Laravoole;
 use Exception;
 use ErrorException;
 
-use Illuminate\Http\Request as IlluminateRequest;
+use Laravoole\Wrapper\IlluminateRequestWrapper;
 
 use Illuminate\Support\Facades\Facade;
 
@@ -80,7 +80,7 @@ abstract class Base
 
     }
 
-    protected function dealWithRequest($request, $classname = IlluminateRequest::class)
+    protected function dealWithRequest($request, $classname = IlluminateRequestWrapper::class)
     {
 
         $get = isset($request->get) ? $request->get : array();
@@ -93,9 +93,7 @@ abstract class Base
 
         $content = $request->rawContent() ?: null;
 
-        $illuminate_request = new $classname($get, $post, []/* attributes */, $cookie, $files, $server, $content);
-
-        return $illuminate_request;
+        return new $classname($get, $post, []/* attributes */, $cookie, $files, $server, $content);
     }
 
     private function dealWithResponse($response, $illuminate_response, $accept_gzip)

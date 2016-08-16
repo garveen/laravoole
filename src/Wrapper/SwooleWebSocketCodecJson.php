@@ -21,8 +21,8 @@ class SwooleWebSocketCodecJson implements SwooleWebSocketCodecInterface
         return [
             'method' => $data->m,
             'params' => $data->p,
-            'echo' => $data->e,
-            'is_upload' => $data->u,
+            'echo' => $data->e ?? null,
+            'is_upload' => $data->u ?? false,
         ];
     }
 }

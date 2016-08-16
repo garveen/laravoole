@@ -46,10 +46,10 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
     public function onHandShake(swoole_http_request $request, swoole_http_response $response)
     {
         $protocol = 'json';
-        if(isset($request->header['sec-websocket-protocol'])) {
+        if (isset($request->header['sec-websocket-protocol'])) {
             $protocols = $request->header['sec-websocket-protocol'];
             $protocols = array_intersect(preg_split('~,\s*~', $protocols), array_keys($this->protocolCodecs));
-            if(!empty($protocols)) {
+            if (!empty($protocols)) {
                 $protocol = $protocols[0];
                 $response->header('Sec-WebSocket-Protocol', $protocol);
             }
@@ -83,7 +83,21 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         if (!isset($this->unfinished[$frame->fd])) {
             return false;
         }
-        $this->unfinished[$frame->fd] .= $frame->data;
+        if (isset($this->connections[$frame->fd]['request']->laravooleInfo->nextMessageRoute)) {
+            $route = $this->connections[$frame->fd]['request']->laravooleInfo->nextMessageRoute;
+            $data['method'] = $route['method'];
+            $data['params'] = $route['params'];
+            $data['params']['_laravoole_raw'] = $frame->data;
+            $data['params']['_laravoole_previous'] = $route['previous'];
+            if ($frame->finish) {
+                unset($this->connections[$frame->fd]['request']->laravooleInfo->nextMessageRoute);
+            }
+            return $this->dispatch($server, $frame->fd, $data);
+
+        } else {
+            $this->unfinished[$frame->fd] .= $frame->data;
+        }
+
         if (!$frame->finish) {
             return;
         }
