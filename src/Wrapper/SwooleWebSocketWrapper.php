@@ -84,13 +84,16 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             return false;
         }
         if (isset($this->connections[$frame->fd]['request']->laravooleInfo->nextMessageRoute)) {
-            $route = $this->connections[$frame->fd]['request']->laravooleInfo->nextMessageRoute;
+            $request = $this->connections[$frame->fd]['request'];
+            $route = $request->laravooleInfo->nextMessageRoute;
             $data['method'] = $route['method'];
             $data['params'] = $route['params'];
             $data['params']['_laravoole_raw'] = $frame->data;
             $data['params']['_laravoole_previous'] = $route['previous'];
+
+            $data['echo'] = $request->echo;
             if ($frame->finish) {
-                unset($this->connections[$frame->fd]['request']->laravooleInfo->nextMessageRoute);
+                unset($request->laravooleInfo->nextMessageRoute);
             }
             return $this->dispatch($server, $frame->fd, $data);
 
