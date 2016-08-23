@@ -37,7 +37,7 @@ Laravel on Swoole Or Workerman
 To get started, add laravoole to you composer.json file and run `composer update`:
 
 ```
-"garveen/laravoole": "~0.1"
+"garveen/laravoole": "~0.2"
 ```
 
 or just run shell command:
