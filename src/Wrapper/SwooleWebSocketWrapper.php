@@ -36,8 +36,8 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         $this->server->on('Shutdown', [$this, 'onServerShutdown']);
         $this->server->on('WorkerStart', [$this, 'onWorkerStart']);
         $this->server->on('HandShake', [$this, 'onHandShake']);
-        // $this->server->on('Open', [$this, 'onOpen']);
         $this->server->on('Message', [$this, 'onMessage']);
+        $this->server->on('Request', [$this, 'onRequest']);
         $this->server->on('Close', [$this, 'onClose']);
 
         $this->server->start();
@@ -141,13 +141,19 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function endResponse($response, $content)
     {
-        $data = $this->connections[$response->request->fd]['protocol']::encode(
-            $response->http_status,
-            $response->request->method,
-            $content,
-            $response->request->echo
-        );
-        $this->server->push($response->request->fd, $data);
+        if(isset($response->request)) {
+            // This is a websocket request
+            $data = $this->connections[$response->request->fd]['protocol']::encode(
+                $response->http_status,
+                $response->request->method,
+                $content,
+                $response->request->echo
+            );
+            $this->server->push($response->request->fd, $data);
+        } else {
+            // This is a http request
+            parent::endResponse($response, $content);
+        }
 
     }
 
