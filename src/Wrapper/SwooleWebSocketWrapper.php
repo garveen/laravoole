@@ -7,30 +7,56 @@ use swoole_http_response;
 
 use Laravoole\Request;
 use Laravoole\Response;
+use Laravoole\WebsocketCodec\Json;
+use Laravoole\WebsocketCodec\JsonRpc;
 
 class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterface
 {
+    protected $defaultProtocol;
+
+    protected $connections = [];
+
+    protected $unfinished = [];
+
+    protected static $protocolCodecs = [
+        'json' => Json::class,
+        'jsonrpc' => JsonRpc::class,
+    ];
+
     public function __construct($host, $port)
     {
         $this->server = new swoole_websocket_server($host, $port);
     }
 
-    protected $connections = [];
-    protected $unfinished = [];
-    protected $protocolCodecs = [
-        'json' => SwooleWebSocketCodecJson::class,
-    ];
-
-    public static function getDefaults()
+    public static function getExtParams()
     {
-        return array_merge(parent::getDefaults(), ['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK' => null]);
+        return [
+            'websocket_default_protocol' => 'jsonrpc',
+            'websocket_protocols',
+            'websocket_protocol_handlers',
+        ];
+    }
+
+    public static function registerCodec($protocol, $class = null)
+    {
+        if (is_string($protocol)) {
+            if (!class_exists($class)) {
+                throw new Exception("class $class not found", 1);
+            }
+            $protocol = [$protocol => $class];
+        }
+        static::$protocolCodecs = array_merge(static::$protocolCodecs, $protocol);
     }
 
     public function start()
     {
-        if (!empty($this->settings)) {
-            $this->server->set($this->settings);
+        if (!empty($this->handler_config)) {
+            $this->server->set($this->handler_config);
         }
+
+        $this->defaultProtocol = $this->wrapper_config['websocket_default_protocol'];
+
+        static::registerCodec($this->wrapper_config['websocket_protocols']);
 
         $this->server->on('Start', [$this, 'onServerStart']);
         $this->server->on('Shutdown', [$this, 'onServerShutdown']);
@@ -45,14 +71,21 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function onHandShake(swoole_http_request $request, swoole_http_response $response)
     {
-        $protocol = 'json';
+        $protocol = false;
         if (isset($request->header['sec-websocket-protocol'])) {
-            $protocols = $request->header['sec-websocket-protocol'];
-            $protocols = array_intersect(preg_split('~,\s*~', $protocols), array_keys($this->protocolCodecs));
-            if (!empty($protocols)) {
-                $protocol = $protocols[0];
+            $protocols = preg_split('~,\s*~', $request->header['sec-websocket-protocol']);
+            foreach ($protocols as $protocol) {
+                if (isset(static::$protocolCodecs[$protocol])) {
+                    break;
+                }
+            }
+            if ($protocol) {
                 $response->header('Sec-WebSocket-Protocol', $protocol);
             }
+        }
+
+        if (!$protocol) {
+            $protocol = $this->defaultProtocol;
         }
 
         $secKey = $request->header['sec-websocket-key'];
@@ -72,7 +105,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         foreach ($request as $k => $v) {
             $laravooleRequest->$k = $v;
         }
-        $this->connections[$request->fd] = ['request' => $laravooleRequest, 'protocol' => $this->protocolCodecs[$protocol]];
+        $this->connections[$request->fd] = ['request' => $laravooleRequest, 'protocol' => static::$protocolCodecs[$protocol]];
         $this->unfinished[$request->fd] = '';
         return true;
 
@@ -141,7 +174,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function endResponse($response, $content)
     {
-        if(isset($response->request)) {
+        if (isset($response->request)) {
             // This is a websocket request
             $data = $this->connections[$response->request->fd]['protocol']::encode(
                 $response->http_status,
@@ -154,20 +187,18 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             // This is a http request
             parent::endResponse($response, $content);
         }
-
     }
 
     public function onClose($server, $fd)
     {
         unset($this->unfinished[$fd]);
         unset($this->connections[$fd]);
-        if (isset($this->settings['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'])) {
+        if (isset($this->wrapper_config['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'])) {
             $data = new \stdClass;
-            $data->m = $this->settings['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'];
+            $data->m = $this->wrapper_config['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'];
             $data->p = [];
             $data->e = null;
             $this->dispatch($server, $fd, $data);
         }
     }
-
 }

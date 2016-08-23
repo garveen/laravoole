@@ -1,17 +1,16 @@
 <?php
 
-namespace Laravoole\Wrapper;
+namespace Laravoole\WebsocketCodec;
 
-class SwooleWebSocketCodecJson implements SwooleWebSocketCodecInterface
+class Json implements CodecInterface
 {
-    public static function encode($statusCode, $method, $content, $echo, $is_upload = false)
+    public static function encode($statusCode, $method, $content, $echo)
     {
         return json_encode([
             's' => $statusCode,
             'm' => $method,
             'p' => $content,
             'e' => $echo,
-            'u' => $is_upload,
         ]);
     }
 
@@ -21,8 +20,7 @@ class SwooleWebSocketCodecJson implements SwooleWebSocketCodecInterface
         return [
             'method' => $data->m,
             'params' => $data->p,
-            'echo' => $data->e ?? null,
-            'is_upload' => $data->u ?? false,
+            'echo' => isset($data->e) ? $data->e : null,
         ];
     }
 }

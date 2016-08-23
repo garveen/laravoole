@@ -1,11 +1,11 @@
 <?php
 
-namespace Laravoole\Wrapper;
+namespace Laravoole\Illuminate;
 
-use Illuminate\Http\Request;
+use Illuminate\Http\Request as IlluminateRequest;
 use Closure;
 
-class IlluminateRequestWrapper extends Request
+class Request extends IlluminateRequest
 {
     protected $laravooleInfo;
 

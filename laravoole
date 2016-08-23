@@ -42,12 +42,18 @@ function main()
                     require $file;
                 }
             });
-            $construct_config = unserialize($input);
+            $configs = unserialize($input);
 
-            $argv = $construct_config['argv'];
-            $server = new Laravoole\Server($construct_config['config']['mode']);
-
-            $server->start($construct_config['config'], $construct_config['laravoole_settings']);
+            $argv = $configs['argv'];
+            $server = new Laravoole\Server($configs['mode']);
+            $server->start(
+                $configs['host'],
+                $configs['port'],
+                $configs['pid_file'],
+                $configs['root_dir'],
+                $configs['handler_config'],
+                $configs['wrapper_config']
+            );
 
         }
     } else {
@@ -108,7 +114,7 @@ function sendSignal($sig)
 function getPid()
 {
 
-    $pid_file = getPidFile();
+    $pid_file = config('laravoole.base_config.pid_file');
     if (file_exists($pid_file)) {
         $pid = file_get_contents($pid_file);
         if (posix_getpgid($pid)) {
@@ -120,17 +126,6 @@ function getPid()
     return false;
 }
 
-function getPidFile()
-{
-    static $pid_file = false;
-    if ($pid_file === false) {
-
-        $app = app();
-        $pid_file = env('LARAVOOLE_PID_FILE', $app->storagePath() . '/logs/laravoole.pid');
-    }
-    return $pid_file;
-
-}
 function start()
 {
     if (getPid()) {
@@ -138,63 +133,61 @@ function start()
         exit(1);
     }
 
-    $mode = env('LARAVOOLE_MODE', function () {
-        if (extension_loaded('swoole')) {
-            return 'SwooleHttp';
-        } elseif (class_exists('Workerman\Worker')) {
-            return 'WorkermanFastCGI';
-        } else {
-            echo "Laravoole needs Swoole or Workerman." . PHP_EOL .
-                "You can install Swoole by command:" . PHP_EOL .
-                " pecl install swoole" . PHP_EOL .
-                "Or you can install Workerman by command:" . PHP_EOL .
-                " composer require workerman/workerman" . PHP_EOL;
-            exit;
-        }
-    });
+    $mode = config('laravoole.base_config.mode');
+    if (!$mode) {
+        echo "Laravoole needs Swoole or Workerman." . PHP_EOL .
+            "You can install Swoole by command:" . PHP_EOL .
+            " pecl install swoole" . PHP_EOL .
+            "Or you can install Workerman by command:" . PHP_EOL .
+            " composer require workerman/workerman" . PHP_EOL;
+        exit;
+    }
 
     $wrapper = "Laravoole\\Wrapper\\{$mode}Wrapper";
 
-    $settings = $wrapper::getDefaults();
-    foreach ($settings as $key => $value) {
-        if (is_array($value)) {
-            $settings[$key] = $value();
-        } else {
-            $settings[$key] = $value;
+    foreach ([
+        'handler_config' => $wrapper::getParams(),
+    ] as $config_name => $params) {
+        $$config_name = [];
+        foreach ($params as $paramName => $default) {
+            if (is_int($paramName)) {
+                $paramName = $default;
+                $default = null;
+            }
+            $key = $paramName;
+            $value = config("laravoole.{$config_name}.{$key}", function () use ($key, $default) {
+                return env("LARAVOOLE_" . strtoupper($key), $default);
+            });
+            if ($value !== null) {
+                if ((is_array($value) || is_object($value)) && is_callable($value)) {
+                    $value = $value();
+                }
+                $$config_name[$paramName] = $value;
+            }
         }
-    }
 
-    foreach ($wrapper::getParams() as $param) {
-        $key = 'LARAVOOLE_' . strtoupper($param);
-        $value = env($key);
-        if ($value !== null) {
-            $settings[$param] = $value;
-        }
     }
 
     if (!strcasecmp('SwooleFastCGI', $mode)) {
-        $settings['dispatch_mode'] = 2;
+        $handler_config['dispatch_mode'] = 2;
     }
 
     global $argv;
-    $construct_config = [
-        'config' => [
-            'host' => env('LARAVOOLE_HOST', '127.0.0.1'),
-            'port' => env('LARAVOOLE_PORT', 9050),
-            'pid_file' => getPidFile(),
-            'root_dir' => base_path(),
-            'deal_with_public' => env('LARAVOOLE_DEAL_WITH_PUBLIC', false),
-            'gzip' => env('LARAVOOLE_GZIP', 1),
-            'gzip_min_length' => env('LARAVOOLE_GZIP_MIN_LENGTH', 1024),
-            'mode' => $mode,
-            'server' => env('LARAVOOLE_SERVER', 'Laravoole'),
-        ],
-        'laravoole_settings' => $settings,
+    $configs = [
+        'host' => config('laravoole.base_config.host'),
+        'port' => config('laravoole.base_config.port'),
+        'mode' => config('laravoole.base_config.mode'),
+        'pid_file' => config('laravoole.base_config.pid_file'),
+        'root_dir' => config('laravoole.base_config.root_dir'),
+        // for swoole / workerman
+        'handler_config' => $handler_config,
+        // for wrapper, like http / fastcgi / websocket
+        'wrapper_config' => config('laravoole.wrapper_config'),
         'argv' => $argv,
     ];
 
     $handle = popen('/usr/bin/env php ' . __FILE__, 'w');
-    fwrite($handle, serialize($construct_config));
+    fwrite($handle, serialize($configs));
     fclose($handle);
 
 }

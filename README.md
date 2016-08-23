@@ -55,6 +55,7 @@ In .env , use LARAVOOLE_* to config Laravoole.
 ```INI
  LARAVOOLE_MODE=SwooleHttp
  LARAVOOLE_MODE=SwooleFastCGI
+ LARAVOOLE_MODE=SwooleWebSocket
  LARAVOOLE_MODE=WorkermanFastCGI
 ```
 

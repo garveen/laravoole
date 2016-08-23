@@ -1,8 +1,8 @@
 <?php
 
-namespace Laravoole\Wrapper;
+namespace Laravoole\WebsocketCodec;
 
-interface SwooleWebSocketCodecInterface
+interface CodecInterface
 {
     public static function encode($statusCode, $method, $content, $echo);
 

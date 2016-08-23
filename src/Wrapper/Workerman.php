@@ -28,16 +28,11 @@ abstract class Workerman extends Base implements ServerInterface
         ];
     }
 
-    public static function getDefaults()
-    {
-        return [];
-    }
-
     public function start()
     {
 
-        if (!empty($this->settings)) {
-            $this->set($this->settings);
+        if (!empty($this->handler_config)) {
+            $this->set($this->handler_config);
         }
         $this->on('Receive', [$this, 'onReceive']);
         $this->on('WorkerStart', [$this, 'onWorkerStart']);
@@ -57,15 +52,8 @@ abstract class Workerman extends Base implements ServerInterface
 
     public function onWorkerStart($worker)
     {
-        foreach (spl_autoload_functions() as $function) {
-            spl_autoload_unregister($function);
-        }
-
         $this->server = $worker;
-        require $this->config['root_dir'] . '/bootstrap/autoload.php';
-        $this->app = $this->getApp();
-
-        $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
+        parent::prepareKernel();
     }
 
     public function on($event, callable $callback)

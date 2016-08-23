@@ -19,11 +19,11 @@ class Server
         return $this->wrapper;
     }
 
-    public function start($config, $settings)
+    public function start($host, $port, $pid_file, $root_dir, $handler_config, $wrapper_config)
     {
         require __DIR__ . '/Mime.php';
-        $wrapper = new $this->wrapper($config['host'], $config['port']);
-        $wrapper->init($config, $settings);
+        $wrapper = new $this->wrapper($host, $port);
+        $wrapper->init($pid_file, $root_dir, $handler_config, $wrapper_config);
         $wrapper->start();
     }
 

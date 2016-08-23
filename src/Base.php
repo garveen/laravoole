@@ -4,15 +4,19 @@ namespace Laravoole;
 use Exception;
 use ErrorException;
 
-use Laravoole\Wrapper\IlluminateRequestWrapper;
+use Laravoole\Illuminate\Application;
+use Laravoole\Illuminate\Request as IlluminateRequest;
 
 use Illuminate\Support\Facades\Facade;
 
 abstract class Base
 {
-    protected $config;
 
-    protected $settings;
+    protected $root_dir;
+
+    protected $pid_file;
+
+    protected $handler_config;
 
     protected $kernel;
 
@@ -27,17 +31,49 @@ abstract class Base
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
     }
 
-    final public function init($config, $settings)
+    public static function getExtParams()
     {
-        $this->config = $config;
-        $this->settings = $settings;
+        return [];
+    }
+
+    final public function init($pid_file, $root_dir, $handler_config, $wrapper_config)
+    {
+        $this->pid_file = $pid_file;
+        $this->root_dir = $root_dir;
+        $this->handler_config = $handler_config;
+        $this->wrapper_config = $wrapper_config;
+    }
+
+    public function prepareKernel()
+    {
+        // unregister temporary autoloader
+        foreach (spl_autoload_functions() as $function) {
+            spl_autoload_unregister($function);
+        }
+
+        require $this->root_dir . '/bootstrap/autoload.php';
+        $this->app = $this->getApp();
+
+        $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
+        // from \Illuminate\Contracts\Console\Kernel
+        // do not using Http\Kernel here, because needs SetRequestForConsole
+        $this->app->bootstrapWith([
+            'Illuminate\Foundation\Bootstrap\DetectEnvironment',
+            'Illuminate\Foundation\Bootstrap\LoadConfiguration',
+            'Illuminate\Foundation\Bootstrap\ConfigureLogging',
+            'Illuminate\Foundation\Bootstrap\HandleExceptions',
+            'Illuminate\Foundation\Bootstrap\RegisterFacades',
+            'Illuminate\Foundation\Bootstrap\SetRequestForConsole',
+            'Illuminate\Foundation\Bootstrap\RegisterProviders',
+            'Illuminate\Foundation\Bootstrap\BootProviders',
+        ]);
     }
 
     public function onRequest($request, $response, $illuminate_request = false)
     {
         // for file system
         clearstatcache();
-        if ($this->config['deal_with_public']) {
+        if (config('laravoole.base_config.deal_with_public')) {
             if ($this->dealWithPublic($request, $response)) {
                 return;
             }
@@ -46,13 +82,13 @@ abstract class Base
         try {
             $kernel = $this->kernel;
 
-            if(!$illuminate_request) {
+            if (!$illuminate_request) {
                 $illuminate_request = $this->dealWithRequest($request);
             }
 
             $illuminate_response = $kernel->handle($illuminate_request);
             // Is gzip enabled and the client accept it?
-            $accept_gzip = $this->config['gzip'] && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
+            $accept_gzip = config('laravoole.base_config.gzip') && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
 
             $this->dealWithResponse($response, $illuminate_response, $accept_gzip);
 
@@ -80,7 +116,7 @@ abstract class Base
 
     }
 
-    protected function dealWithRequest($request, $classname = IlluminateRequestWrapper::class)
+    protected function dealWithRequest($request, $classname = IlluminateRequest::class)
     {
 
         $get = isset($request->get) ? $request->get : array();
@@ -125,8 +161,8 @@ abstract class Base
         // check gzip
         if ($accept_gzip && isset($response->header['Content-Type'])) {
             $mime = $response->header['Content-Type'];
-            if (strlen($content) > $this->config['gzip_min_length'] && is_mime_gzip($mime)) {
-                $response->gzip($this->config['gzip']);
+            if (strlen($content) > config('laravoole.base_config.gzip_min_length') && is_mime_gzip($mime)) {
+                $response->gzip(config('laravoole.base_config.gzip'));
             }
         }
         $this->endResponse($response, $content);
@@ -168,8 +204,7 @@ abstract class Base
 
     protected function getApp()
     {
-
-        $app = new App($this->config['root_dir']);
+        $app = new Application($this->root_dir);
 
         $app->singleton(
             \Illuminate\Contracts\Http\Kernel::class,

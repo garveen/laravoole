@@ -16,7 +16,7 @@ class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
 
     public function start()
     {
-        $this->config['deal_with_public'] = false;
+        config(['laravoole.base_config.deal_with_public' => false]);
         parent::start();
     }
 
