@@ -138,6 +138,7 @@ abstract class Base
         // status
         $response->status($illuminate_response->getStatusCode());
         // headers
+        $response->header('Server', config('laravoole.base_config.server'));
         foreach ($illuminate_response->headers->allPreserveCase() as $name => $values) {
             foreach ($values as $value) {
                 $response->header($name, $value);

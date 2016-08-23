@@ -13,6 +13,7 @@ class JsonRpc implements CodecInterface
             $error = null;
         }
         return json_encode([
+            'status' => $statusCode,
             'method' => $method,
             'result' => $content,
             'error' => $error,
@@ -22,7 +23,10 @@ class JsonRpc implements CodecInterface
 
     public static function decode($data)
     {
-        $data = json_decode($data);
+        $data = @json_decode($data);
+        if(!isset($data->method) || !isset($data->params)) {
+            return;
+        }
         return [
             'method' => $data->method,
             'params' => $data->params,
