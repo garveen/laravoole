@@ -21,7 +21,7 @@ return [
         // SwooleHttp        uses swoole to response http requests
         // SwooleFastCGI     uses swoole to response fastcgi requests (just like php-fpm)
         // SwooleWebSocket   uses swoole to response websocket requests and http requests
-        // WorkermanFastCCGI uses workerman to response fastcgi requests (just like php-fpm)
+        // WorkermanFastCGI  uses workerman to response fastcgi requests (just like php-fpm)
         'mode' => env('LARAVOOLE_MODE', function () {
             if (extension_loaded('swoole')) {
                 return 'SwooleHttp';

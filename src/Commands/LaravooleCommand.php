@@ -104,25 +104,22 @@ class LaravooleCommand extends Command
 
         $wrapper = "Laravoole\\Wrapper\\{$mode}Wrapper";
 
-        foreach ([
-            'handler_config' => $wrapper::getParams(),
-        ] as $config_name => $params) {
-            $$config_name = [];
-            foreach ($params as $paramName => $default) {
-                if (is_int($paramName)) {
-                    $paramName = $default;
-                    $default = null;
+        $handler_config = [];
+        $params = $wrapper::getParams();
+        foreach ($params as $paramName => $default) {
+            if (is_int($paramName)) {
+                $paramName = $default;
+                $default = null;
+            }
+            $key = $paramName;
+            $value = config("laravoole.handler_config.{$key}", function () use ($key, $default) {
+                return env("LARAVOOLE_" . strtoupper($key), $default);
+            });
+            if ($value !== null) {
+                if ((is_array($value) || is_object($value)) && is_callable($value)) {
+                    $value = $value();
                 }
-                $key = $paramName;
-                $value = config("laravoole.{$config_name}.{$key}", function () use ($key, $default) {
-                    return env("LARAVOOLE_" . strtoupper($key), $default);
-                });
-                if ($value !== null) {
-                    if ((is_array($value) || is_object($value)) && is_callable($value)) {
-                        $value = $value();
-                    }
-                    $$config_name[$paramName] = $value;
-                }
+                $handler_config[$paramName] = $value;
             }
 
         }
