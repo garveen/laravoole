@@ -17,12 +17,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         if (!empty($this->handler_config)) {
             $this->server->set($this->handler_config);
         }
-        $this->server->on('Start', [$this, 'onServerStart']);
-        $this->server->on('Shutdown', [$this, 'onServerShutdown']);
-        $this->server->on('WorkerStart', [$this, 'onWorkerStart']);
-        $this->server->on('Request', [$this, 'onRequest']);
-
-        $this->server->start();
+        parent::start();
     }
 
     public function onRequest($request, $response, $illuminate_request = false)

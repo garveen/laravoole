@@ -9,6 +9,8 @@ use Exception;
 class Swoole extends Base implements ServerInterface
 {
 
+    protected $callbacks = [];
+
     // http://wiki.swoole.com/wiki/page/274.html
     public static function getParams()
     {
@@ -49,6 +51,24 @@ class Swoole extends Base implements ServerInterface
             'discard_timeout_request',
             'enable_reuse_port',
         ];
+    }
+
+    public function start()
+    {
+        $callbacks = array_merge([
+            'Start' => [$this, 'onServerStart'],
+            'Shutdown' => [$this, 'onServerShutdown'],
+            'WorkerStart' => [$this, 'onWorkerStart'],
+            'Request' => [$this, 'onRequest'],
+        ], $this->callbacks);
+        if(isset($this->wrapper_config['swoole_ontask'])) {
+            $callbacks['Task'] = $this->wrapper_config['swoole_ontask'];
+            $callbacks['Finish'] = $this->wrapper_config['swoole_onfinish'];
+        }
+        foreach($callbacks as $on => $method) {
+            $this->server->on($on, $method);
+        }
+        $this->server->start();
     }
 
     public function onServerStart()

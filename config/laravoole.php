@@ -47,6 +47,17 @@ return [
         'websocket_protocols' => [
             'jsonrpc' => Laravoole\WebsocketCodec\JsonRpc::class,
         ],
+
+        // Uncomment below if you want to use your own task callbacks
+        /*
+        'swoole_ontask' => [
+            Laravoole\Wrapper\SwooleWebSocketWrapper::class, 'onTask',
+        ],
+
+        'swoole_onfinish' => [
+            Laravoole\Wrapper\SwooleWebSocketWrapper::class, 'onFinish',
+        ],
+        */
     ],
 
 ];

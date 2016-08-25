@@ -4,6 +4,7 @@ namespace Laravoole\Wrapper;
 use swoole_websocket_server;
 use swoole_http_request;
 use swoole_http_response;
+use swoole_process;
 
 use Laravoole\Request;
 use Laravoole\Response;
@@ -13,6 +14,8 @@ use Laravoole\WebsocketCodec\JsonRpc;
 class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterface
 {
     protected $defaultProtocol;
+
+    protected $pushProcess;
 
     protected $connections = [];
 
@@ -28,13 +31,12 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         $this->server = new swoole_websocket_server($host, $port);
     }
 
-    public static function getExtParams()
+    public static function getParams()
     {
-        return [
-            'websocket_default_protocol' => 'jsonrpc',
-            'websocket_protocols',
-            'websocket_protocol_handlers',
-        ];
+        $params = parent::getParams();
+        unset($params[array_search('task_worker_num', $params)]);
+        $params['task_worker_num'] = 1;
+        return $params;
     }
 
     public static function registerCodec($protocol, $class = null)
@@ -58,15 +60,29 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
         static::registerCodec($this->wrapper_config['websocket_protocols']);
 
-        $this->server->on('Start', [$this, 'onServerStart']);
-        $this->server->on('Shutdown', [$this, 'onServerShutdown']);
-        $this->server->on('WorkerStart', [$this, 'onWorkerStart']);
-        $this->server->on('HandShake', [$this, 'onHandShake']);
-        $this->server->on('Message', [$this, 'onMessage']);
-        $this->server->on('Request', [$this, 'onRequest']);
-        $this->server->on('Close', [$this, 'onClose']);
+        $this->callbacks = array_merge([
+            'HandShake' => [$this, 'onHandShake'],
+            'Message' => [$this, 'onMessage'],
+            'Close' => [$this, 'onClose'],
+            'Task' => [static::class, 'onTask'],
+            'Finish' => [static::class, 'onFinish'],
+        ], $this->callbacks);
+        parent::start();
 
-        $this->server->start();
+    }
+
+    public static function onTask($server, $task_id, $from_id, $data)
+    {
+        foreach ($data['fds'] as $fd) {
+            try {
+                $server->push($fd, $data['params']);
+            } catch (\ErrorException $e) {}
+        }
+    }
+
+    public static function onFinish($server, $task_id, $data)
+    {
+
     }
 
     public function onHandShake(swoole_http_request $request, swoole_http_response $response)
@@ -138,7 +154,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             return;
         }
         $data = $this->connections[$frame->fd]['protocol']::decode($this->unfinished[$frame->fd]);
-        if(is_null($data)) {
+        if (is_null($data)) {
             return;
         }
 
@@ -167,6 +183,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             $illuminateRequest->setLaravooleInfo((object) [
                 'fd' => $fd,
                 'server' => $server,
+                'codec' => $this->connections[$response->request->fd]['protocol'],
             ]);
         }
 

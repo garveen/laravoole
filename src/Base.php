@@ -31,11 +31,6 @@ abstract class Base
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
     }
 
-    public static function getExtParams()
-    {
-        return [];
-    }
-
     final public function init($pid_file, $root_dir, $handler_config, $wrapper_config)
     {
         $this->pid_file = $pid_file;
