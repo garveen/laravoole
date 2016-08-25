@@ -61,11 +61,11 @@ class Swoole extends Base implements ServerInterface
             'WorkerStart' => [$this, 'onWorkerStart'],
             'Request' => [$this, 'onRequest'],
         ], $this->callbacks);
-        if(isset($this->wrapper_config['swoole_ontask'])) {
+        if (isset($this->wrapper_config['swoole_ontask'])) {
             $callbacks['Task'] = $this->wrapper_config['swoole_ontask'];
             $callbacks['Finish'] = $this->wrapper_config['swoole_onfinish'];
         }
-        foreach($callbacks as $on => $method) {
+        foreach ($callbacks as $on => $method) {
             $this->server->on($on, $method);
         }
         $this->server->start();
@@ -83,6 +83,10 @@ class Swoole extends Base implements ServerInterface
     public function onWorkerStart($serv, $worker_id)
     {
         parent::prepareKernel();
+        $server = $this->server;
+        $this->app->singleton('laravoole.server', function ($app) use ($server) {
+            return $server;
+        });
     }
 
     public function onServerShutdown($serv)
