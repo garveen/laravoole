@@ -31,7 +31,6 @@ Laravel on Swoole Or Workerman
 
 
 ##Install
----------
 
 
 To get started, add laravoole to you composer.json file and run `composer update`:
@@ -56,14 +55,12 @@ Once composer done its job, you need to register Laravel service provider, in yo
 ```
 
 ##Usage
--------
 
 ```shell
 php artisan laravoole [start | stop | reload | reload_task | restart | quit]
 ```
 
 ##Config
---------
 
 To generate `config/laravoole.php`:
 
@@ -88,12 +85,10 @@ LARAVOOLE_HOST=0.0.0.0
 ```
 
 ##base_config
--------------
 
 This section configures laravoole itself.
 
 ###mode
--------
 
 `SwooleHttp` uses swoole to response http requests
 
@@ -105,27 +100,22 @@ This section configures laravoole itself.
 
 
 ###pid_file
------------
 
 Defines a file that will store the process ID of the main process.
 
 ###deal\_with\_public
----------------------
 
 When using Http mode, you can turn on this option to let laravoole send static resources to clients. Use this ***ONLY*** when developing.
 
 ###host and port
-----------------
 
 Default `host` is `127.0.0.1`, and `port` is `9050`
 
 ##handler_config
-----------------
 
 This section configures the backend, e.g. `swoole` or `workerman`.
 
 ###Swoole
----------
 
 As an example, if want to set worker_num to 8, you can set `.env`:
 
@@ -172,7 +162,7 @@ See Workerman's document:
 [English](http://wiki.workerman.net/Workerman_documentation#Properties)
 
 ##Websocket Usage
------------------
+
 ###Subprotocols
 
 See Mozilla's Document: [Writing WebSocket server](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#Subprotocols)
@@ -229,7 +219,6 @@ tr:nth-child(even){background-color: #eee}
 
 
 ##Work with nginx
------------------
 
 ```Nginx
 server {
