@@ -54,6 +54,8 @@ Once composer done its job, you need to register Laravel service provider, in yo
 ],
 ```
 
+**Notice: You should NOT use file session handler, because it is not stable at this environement. Use redis or other handler instead.**
+
 ##Usage
 
 ```shell
