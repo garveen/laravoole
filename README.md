@@ -11,7 +11,7 @@ Laravel on Swoole Or Workerman
 		<td>php</td><td>>=5.5.16</td>
 	</tr>
 	<tr>
-		<td>laravel/framework</td><td>5.1.* | 5.2.*</td>
+		<td>laravel/framework</td><td>5.1.* | 5.2.* | 5.3.*</td>
 	</tr>
 </table>
 
@@ -53,6 +53,8 @@ Once composer done its job, you need to register Laravel service provider, in yo
     Laravoole\LaravooleServiceProvider::class,
 ],
 ```
+
+**Notice: You should NOT use file session handler, because it is not stable at this environement. Use redis or other handler instead.**
 
 ##Usage
 
