@@ -11,7 +11,7 @@ Laravel on Swoole Or Workerman
 		<td>php</td><td>>=5.5.16</td>
 	</tr>
 	<tr>
-		<td>laravel/framework</td><td>5.1.* | 5.2.*</td>
+		<td>laravel/framework</td><td>5.1.* | 5.2.* | 5.3.*</td>
 	</tr>
 </table>
 
