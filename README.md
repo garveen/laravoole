@@ -222,42 +222,47 @@ tr:nth-child(even){background-color: #eee}
 
 ```Nginx
 server {
-	listen       80;
-	server_name  localhost;
+    listen       80;
+    server_name  localhost;
 
-	root /path/to/laravel/public;
+    root /path/to/laravel/public;
 
-	location / {
+    location / {
             try_files $uri $uri/ @laravoole;
             index  index.html index.htm index.php;
         }
 
-	# http
-	location @laravoole {
-		proxy_set_header   Host $host:$server_port;
-		proxy_set_header   X-Real-IP $remote_addr;
-		proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-		proxy_http_version 1.1;
+    # http
+    location @laravoole {
+        proxy_set_header   Host $host:$server_port;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_http_version 1.1;
 
-		proxy_pass http://127.0.0.1:9050;
-	}
+        proxy_pass http://127.0.0.1:9050;
+    }
 
-	# fastcgi
-	location @laravoole {
-		include fastcgi_params;
-		fastcgi_pass 127.0.0.1:9050;
-	}
+    # fastcgi
+    location @laravoole {
+        include fastcgi_params;
+        fastcgi_pass 127.0.0.1:9050;
+    }
 
-	# websocket
-	location /websocket {
+    # websocket
+    # send close if there has not an upgrade header
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+    location /websocket {
         proxy_connect_timeout 7d;
         proxy_send_timeout 7d;
         proxy_read_timeout 7d;
         proxy_pass http://127.0.0.1:9050;
         proxy_http_version 1.1;
         proxy_set_header Upgrade    $http_upgrade;
-        proxy_set_header Connection "upgrade";
-	}
+        proxy_set_header Connection $connection_upgrade;
+    }
 }
 ```
 
