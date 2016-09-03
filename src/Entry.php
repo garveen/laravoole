@@ -1,7 +1,8 @@
 <?php
+
 $input = file_get_contents('php://stdin');
 spl_autoload_register(function ($class) {
-    if (is_file($file = __DIR__ . '/src/' . substr(strtr($class, '\\', '/'), 10) . '.php')) {
+    if (is_file($file = __DIR__ . '/' . substr(strtr($class, '\\', '/'), 10) . '.php')) {
         require $file;
     }
 });

@@ -62,6 +62,7 @@ abstract class Base
             'Illuminate\Foundation\Bootstrap\RegisterProviders',
             'Illuminate\Foundation\Bootstrap\BootProviders',
         ]);
+        chdir(public_path());
     }
 
     public function onRequest($request, $response, $illuminate_request = false)

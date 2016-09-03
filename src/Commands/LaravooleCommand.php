@@ -142,7 +142,7 @@ class LaravooleCommand extends Command
             'argv' => $argv,
         ];
 
-        $handle = popen('/usr/bin/env php ' . __DIR__ . '/../../laravoole', 'w');
+        $handle = popen('/usr/bin/env php ' . __DIR__ . '/../../src/Entry.php', 'w');
         fwrite($handle, serialize($configs));
         fclose($handle);
     }
