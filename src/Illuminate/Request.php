@@ -11,11 +11,11 @@ class Request extends IlluminateRequest
 
     public function setLaravooleInfo($info)
     {
-        if (!$this->laravooleInfo) {
+        if (!isset($this->laravooleInfo)) {
             $this->laravooleInfo = (object) $info;
         } else {
             foreach ($info as $k => $v) {
-                $this->laravooleInfo->k = $v;
+                $this->laravooleInfo->$k = $v;
             }
         }
     }
