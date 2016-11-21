@@ -1,7 +1,7 @@
 <?php
 namespace Laravoole\Wrapper;
 
-use Workerman\Worker;
+use Laravoole\Workerman\Worker;
 use Laravoole\Protocol\FastCGI;
 
 class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
@@ -13,13 +13,6 @@ class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
         require __DIR__ . '/../../../../workerman/workerman/Autoloader.php';
         $this->server = new Worker("tcp://{$host}:{$port}");
     }
-
-    public function start()
-    {
-        config(['laravoole.base_config.deal_with_public' => false]);
-        parent::start();
-    }
-
 
     public function onReceive($connection, $data)
     {
