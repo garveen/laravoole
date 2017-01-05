@@ -1,5 +1,5 @@
 {
-    "name": "garveen/laravoole",
+    "name": "jyj1993126/laravoole",
     "description": "Get 10x performance for Laravel on Swoole or Workerman",
     "type": "library",
     "keywords": ["laravel","swoole","workerman"],
