@@ -86,6 +86,20 @@ is equals with
 LARAVOOLE_HOST=0.0.0.0
 ```
 
+##Events
+
+By now, there are only two events, `laravoole.on_request` and `laravoole.swoole.websocket.on_close`. You can handle events by editing `EventServiceProvider`:
+
+```php
+public function boot()
+{
+    parent::boot();
+    \Event::listen('laravoole.on_request', function ($request) {
+        \Log::info($request->segments());
+    });
+}
+```
+
 ##base_config
 
 This section configures laravoole itself.

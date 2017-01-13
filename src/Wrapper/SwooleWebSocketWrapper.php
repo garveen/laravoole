@@ -211,19 +211,11 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function onClose($server, $fd)
     {
-        $request = $this->connections[$fd]['request'];
-        $laravooleInfo = $request->laravooleInfo;
-        if (isset($laravooleInfo->onClose)) {
-            if (is_callable($laravooleInfo->onClose)) {
-                ($laravooleInfo->onClose)();
-            } else {
-                $data = new \stdClass;
-                $data->m = $this->wrapper_config['LARAVOOLE_WEBSOCKET_CLOSE_CALLBACK'];
-                $data->p = [];
-                $data->e = null;
-                $this->dispatch($server, $fd, $data);
-            }
+        if (!isset($this->connections[$fd])) {
+            return;
         }
+        $request = $this->connections[$fd]['request'];
+        $this->app['events']->fire('laravoole.swoole.websocket.on_close', [$request, $fd]);
 
         unset($this->unfinished[$fd]);
         unset($this->connections[$fd]);

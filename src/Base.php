@@ -81,6 +81,7 @@ abstract class Base
             if (!$illuminate_request) {
                 $illuminate_request = $this->dealWithRequest($request);
             }
+            $this->app['events']->fire('laravoole.on_request', [$illuminate_request]);
 
             $illuminate_response = $kernel->handle($illuminate_request);
             // Is gzip enabled and the client accept it?
