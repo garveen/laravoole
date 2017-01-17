@@ -13,7 +13,7 @@ return [
         'deal_with_public' => env('LARAVOOLE_DEAL_WITH_PUBLIC', false),
 
         // enable gzip
-        'gzip' => env('LARAVOOLE_GZIP', 1),
+        'gzip' => extension_loaded('zlib') && env('LARAVOOLE_GZIP', 1),
 
         'gzip_min_length' => env('LARAVOOLE_GZIP_MIN_LENGTH', 1024),
 
