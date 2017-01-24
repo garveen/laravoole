@@ -203,20 +203,22 @@ abstract class Base
     protected function getApp()
     {
         $app = new Application($this->root_dir);
+        $rootNamespace = $app->getNamespace();
+        $rootNamespace = trim($rootNamespace, '\\');
 
         $app->singleton(
             \Illuminate\Contracts\Http\Kernel::class,
-            \App\Http\Kernel::class
+            "\\{$rootNamespace}\\Http\\Kernel"
         );
 
         $app->singleton(
             \Illuminate\Contracts\Console\Kernel::class,
-            \App\Console\Kernel::class
+            "\\{$rootNamespace}\\Console\\Kernel"
         );
 
         $app->singleton(
             \Illuminate\Contracts\Debug\ExceptionHandler::class,
-            \App\Exceptions\Handler::class
+            "\\{$rootNamespace}\\Exceptions\\Handler"
         );
 
         return $app;
