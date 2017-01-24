@@ -14,9 +14,6 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
 
     public function start()
     {
-        // override
-        config(['laravoole.base_config.deal_with_public' => false]);
-
         if (!empty($this->handler_config)) {
             $this->server->set($this->handler_config);
         }
@@ -31,5 +28,12 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
     public function onReceive($serv, $fd, $from_id, $data)
     {
         return $this->receive($fd, $data);
+    }
+
+    public function onWorkerStart($serv, $worker_id)
+    {
+        parent::onWorkerStart($serv, $worker_id);
+        // override
+        config(['laravoole.base_config.deal_with_public' => false]);
     }
 }
