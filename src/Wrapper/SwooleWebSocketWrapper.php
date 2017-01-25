@@ -192,7 +192,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         $request->laravooleInfo = $illuminateRequest->getLaravooleInfo();
     }
 
-    public function endResponse($response, $content)
+    public function endResponse($responseCallback, $content)
     {
         if (isset($response->request)) {
             // This is a websocket request

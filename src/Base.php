@@ -8,6 +8,10 @@ use Laravoole\Illuminate\Application;
 use Laravoole\Illuminate\Request as IlluminateRequest;
 
 use Illuminate\Support\Facades\Facade;
+use Psr\Http\Message\ServerRequestInterface;
+
+use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
+use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 
 abstract class Base
 {
@@ -65,13 +69,29 @@ abstract class Base
         chdir(public_path());
     }
 
-    public function onRequest($request, $response, $illuminate_request = false)
+    public function onRequest($request, $illuminate_request = false)
+    {
+        $psrRequest = $this->convertRequest($request);
+        return $this->onPsrRequest($psrRequest, $illuminate_request);
+    }
+
+    protected function convertRequest($request)
+    {
+        if($request instanceof ServerRequestInterface) {
+            return $request;
+        } else {
+            throw new Exception("not implemented", 1);
+
+        }
+    }
+
+    public function onPsrRequest(ServerRequestInterface $psrRequest, $illuminate_request = false)
     {
         // for file system
         clearstatcache();
         if (config('laravoole.base_config.deal_with_public')) {
-            if ($this->dealWithPublic($request, $response)) {
-                return;
+            if ($response = $this->dealWithPublic($psrRequest->getUri())) {
+                return $response;
             }
         }
 
@@ -79,15 +99,15 @@ abstract class Base
             $kernel = $this->kernel;
 
             if (!$illuminate_request) {
-                $illuminate_request = $this->dealWithRequest($request);
+                $illuminate_request = IlluminateRequest::createFromBase((new HttpFoundationFactory)->createRequest($psrRequest));
             }
             $this->app['events']->fire('laravoole.on_request', [$illuminate_request]);
 
             $illuminate_response = $kernel->handle($illuminate_request);
             // Is gzip enabled and the client accept it?
-            $accept_gzip = config('laravoole.base_config.gzip') && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
+            $accept_gzip = config('laravoole.base_config.gzip') && stripos($psrRequest->getHeaderLine('Accept-Encoding'), 'gzip') !== false;
 
-            $this->dealWithResponse($response, $illuminate_response, $accept_gzip);
+            $response = (new DiactorosFactory)->createResponse($illuminate_response);
 
         } catch (\Exception $e) {
             echo '[ERR] ' . $e->getFile() . '(' . $e->getLine() . '): ' . $e->getMessage() . PHP_EOL;
@@ -108,8 +128,9 @@ abstract class Base
                 Facade::clearResolvedInstance('auth');
             }
 
-            return $response;
         }
+        $response->accpetGzip = $accept_gzip;
+        return $response;
 
     }
 
@@ -124,55 +145,20 @@ abstract class Base
         $files = isset($request->files) ? $request->files : array();
         // $attr = isset($request->files) ? $request->files : array();
 
-        $content = $request->rawContent() ?: null;
+        $content = $request->getRawContent() ?: null;
 
         return new $classname($get, $post, []/* attributes */, $cookie, $files, $server, $content);
     }
 
-    private function dealWithResponse($response, $illuminate_response, $accept_gzip)
-    {
 
-        // status
-        $response->status($illuminate_response->getStatusCode());
-        // headers
-        $response->header('Server', config('laravoole.base_config.server'));
-        foreach ($illuminate_response->headers->allPreserveCase() as $name => $values) {
-            foreach ($values as $value) {
-                $response->header($name, $value);
-            }
-        }
-        // cookies
-        foreach ($illuminate_response->headers->getCookies() as $cookie) {
-            $response->rawcookie(
-                $cookie->getName(),
-                urlencode($cookie->getValue()),
-                $cookie->getExpiresTime(),
-                $cookie->getPath(),
-                $cookie->getDomain(),
-                $cookie->isSecure(),
-                $cookie->isHttpOnly()
-            );
-        }
-        // content
-        $content = $illuminate_response->getContent();
 
-        // check gzip
-        if ($accept_gzip && isset($response->header['Content-Type'])) {
-            $mime = $response->header['Content-Type'];
-            if (strlen($content) > config('laravoole.base_config.gzip_min_length') && is_mime_gzip($mime)) {
-                $response->gzip(config('laravoole.base_config.gzip'));
-            }
-        }
-        $this->endResponse($response, $content);
-    }
-
-    public function endResponse($response, $content)
+    public function endResponse($responseCallback, $content)
     {
         // send content & close
-        $response->end($content);
+        $responseCallback->end($content);
     }
 
-    protected function dealWithPublic($request, $response)
+    protected function dealWithPublic($uri, $responseCallback)
     {
         static $public_path;
         if (!$public_path) {
@@ -180,7 +166,6 @@ abstract class Base
             $public_path = $app->make('path.public');
 
         }
-        $uri = $request->server['REQUEST_URI'];
         $file = realpath($public_path . $uri);
         if (is_file($file)) {
             if (!strncasecmp($file, $uri, strlen($public_path))) {

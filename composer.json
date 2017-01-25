@@ -13,7 +13,8 @@
     "require": {
         "php": ">=5.5.16",
         "laravel/framework": "5.1.* || 5.2.* || 5.3.*",
-        "ext-posix": "*"
+        "ext-posix": "*",
+        "symfony/psr-http-message-bridge": "^1.0"
     },
     "suggest": {
         "ext-swoole": "event-based extension for best performance",

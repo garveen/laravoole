@@ -1,12 +1,11 @@
 <?php
 namespace Laravoole\Wrapper;
 
-use Laravoole\Protocol\FastCGI;
+use Garveen\FastCgi\FastCgi;
 use swoole_server;
 
 class SwooleFastCGIWrapper extends Swoole implements ServerInterface
 {
-    use FastCGI;
     public function __construct($host, $port)
     {
         $this->server = new swoole_server($host, $port);
@@ -27,12 +26,32 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
 
     public function onReceive($serv, $fd, $from_id, $data)
     {
-        return $this->receive($fd, $data);
+
+        return $this->fastcgi->receive($fd, $data);
+    }
+
+    public function requestCallback($psrRequest)
+    {
+        return $this->onPsrRequest($psrRequest);
+    }
+
+    public function sendCallback($fd, $payload)
+    {
+        $this->server->send($fd, $payload);
+    }
+
+    public function closeCallback($fd)
+    {
+        $this->server->close($fd);
     }
 
     public function onWorkerStart($serv, $worker_id)
     {
+        fwrite(STDOUT, "Worker $worker_id starting\n");
         parent::onWorkerStart($serv, $worker_id);
+        $this->fastcgi = new FastCgi([$this, 'requestCallback'], [$this, 'sendCallback'], [$this, 'closeCallback'], function($level, $info) {
+            fwrite(STDOUT, "$level $info");
+        });
         // override
         config(['laravoole.base_config.deal_with_public' => false]);
     }

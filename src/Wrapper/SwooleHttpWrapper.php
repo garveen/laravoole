@@ -22,7 +22,9 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
 
     public function onRequest($request, $response, $illuminate_request = false)
     {
+        // convert request
         $request = $this->ucHeaders($request);
+        // provide response callback
         return parent::onRequest($request, $response, $illuminate_request);
     }
 
