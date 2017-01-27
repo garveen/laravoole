@@ -14,7 +14,8 @@
         "php": ">=5.5.16",
         "laravel/framework": "5.1.* || 5.2.* || 5.3.*",
         "ext-posix": "*",
-        "symfony/psr-http-message-bridge": "^1.0"
+        "symfony/psr-http-message-bridge": "^1.0",
+        "garveen/fastcgi": "^0.1"
     },
     "suggest": {
         "ext-swoole": "event-based extension for best performance",
