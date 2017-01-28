@@ -24,9 +24,14 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
     {
         // convert request
         $request = $this->ucHeaders($request);
+        if (config('laravoole.base_config.deal_with_public')) {
+            if ($status = $this->handleStaticFile($request, $response)) {
+                return $status;
+            }
+        }
         // provide response callback
         $illuminate_response = parent::handleRequest($request);
-        return $this->dealWithResponse($response, $illuminate_response);
+        return $this->handleResponse($response, $illuminate_response);
     }
 
     protected function ucHeaders($request)
@@ -49,7 +54,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
     }
 
 
-    protected function dealWithResponse($response, $illuminate_response)
+    protected function handleResponse($response, $illuminate_response)
     {
 
         $accept_gzip = config('laravoole.base_config.gzip') && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
@@ -85,6 +90,35 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
             }
         }
         $this->endResponse($response, $content);
+    }
+
+
+    protected function handleStaticFile($request, $response)
+    {
+        static $public_path;
+        if (!$public_path) {
+            $app = $this->app;
+            $public_path = $app->make('path.public');
+
+        }
+        $uri = $request->server['REQUEST_URI'];
+        $file = realpath($public_path . $uri);
+        if (is_file($file)) {
+            if (!strncasecmp($file, $uri, strlen($public_path))) {
+                $response->status(403);
+                $response->end();
+            } else {
+                $response->header('Content-Type', get_mime_type($file));
+                if (!filesize($file)) {
+                    $response->end();
+                } else {
+                    $response->sendfile($file);
+                }
+            }
+            return true;
+        }
+        return false;
+
     }
 
 }

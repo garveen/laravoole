@@ -80,11 +80,6 @@ abstract class Base
     public function handleRequest($request, IlluminateRequest $illuminate_request = null)
     {
         clearstatcache();
-        if (config('laravoole.base_config.deal_with_public')) {
-            if ($response = $this->dealWithPublic($request->getUri())) {
-                return $response;
-            }
-        }
 
         try {
             $kernel = $this->kernel;
@@ -135,7 +130,7 @@ abstract class Base
 
     }
 
-    protected function convertSwooleRequest(swoole_http_request $request, $classname = IlluminateRequest::class)
+    protected function convertRequest($request, $classname = IlluminateRequest::class)
     {
 
         $get = isset($request->get) ? $request->get : [];
@@ -155,33 +150,6 @@ abstract class Base
     {
         // send content & close
         $responseCallback->end($content);
-    }
-
-    protected function dealWithPublic($uri, $responseCallback)
-    {
-        static $public_path;
-        if (!$public_path) {
-            $app = $this->app;
-            $public_path = $app->make('path.public');
-
-        }
-        $file = realpath($public_path . $uri);
-        if (is_file($file)) {
-            if (!strncasecmp($file, $uri, strlen($public_path))) {
-                $response->status(403);
-                $response->end();
-            } else {
-                $response->header('Content-Type', get_mime_type($file));
-                if (!filesize($file)) {
-                    $response->end();
-                } else {
-                    $response->sendfile($file);
-                }
-            }
-            return true;
-        }
-        return false;
-
     }
 
     protected function getApp()

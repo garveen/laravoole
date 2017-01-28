@@ -2,11 +2,10 @@
 namespace Laravoole\Wrapper;
 
 use Laravoole\Workerman\Worker;
-use Laravoole\Protocol\FastCGI;
+use Garveen\FastCgi\FastCgi;
 
 class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
 {
-    use FastCGI;
 
     public function __construct($host, $port)
     {
@@ -14,11 +13,33 @@ class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
         $this->server = new Worker("tcp://{$host}:{$port}");
     }
 
+    public function onWorkerStart($worker)
+    {
+        parent::onWorkerStart($worker);
+        $this->fastcgi = new FastCgi([$this, 'requestCallback'], [$this, 'sendCallback'], [$this, 'closeCallback'], function($level, $info) {
+            fwrite(STDOUT, "$level $info");
+        });
+    }
+
     public function onReceive($connection, $data)
     {
         $this->connections[$connection->id]['connection'] = $connection;
-        $ret = $this->receive($connection->id, $data);
-        return $ret;
+        return $this->fastcgi->receive($connection->id, $data);
+    }
+
+    public function requestCallback($psrRequest)
+    {
+        return $this->onPsrRequest($psrRequest);
+    }
+
+    public function sendCallback($fd, $payload)
+    {
+        $this->send($fd, $payload);
+    }
+
+    public function closeCallback($fd)
+    {
+        $this->close($fd);
     }
 
 }
