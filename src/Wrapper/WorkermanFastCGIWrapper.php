@@ -15,6 +15,7 @@ class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
 
     public function onWorkerStart($worker)
     {
+        fwrite(STDOUT, "Workerman worker {$worker->id} starting\n");
         parent::onWorkerStart($worker);
         $this->fastcgi = new FastCgi([$this, 'requestCallback'], [$this, 'sendCallback'], [$this, 'closeCallback'], function($level, $info) {
             fwrite(STDOUT, "$level $info");

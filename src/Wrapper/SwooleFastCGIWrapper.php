@@ -47,7 +47,7 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
 
     public function onWorkerStart($serv, $worker_id)
     {
-        fwrite(STDOUT, "Worker $worker_id starting\n");
+        fwrite(STDOUT, "Swoole worker $worker_id starting\n");
         parent::onWorkerStart($serv, $worker_id);
         $this->fastcgi = new FastCgi([$this, 'requestCallback'], [$this, 'sendCallback'], [$this, 'closeCallback'], function($level, $info) {
             fwrite(STDOUT, "$level $info");
