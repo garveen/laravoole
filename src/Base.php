@@ -89,7 +89,7 @@ abstract class Base
                     $request = (new HttpFoundationFactory)->createRequest($request);
                     $illuminate_request = IlluminateRequest::createFromBase($request);
                 } elseif ($request instanceof swoole_http_request) {
-                    $illuminate_request = $this->convertSwooleRequest($request);
+                    $illuminate_request = $this->convertRequest($request);
                 } else {
                     $illuminate_request = IlluminateRequest::createFromBase($request);
                 }
