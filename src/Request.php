@@ -121,7 +121,6 @@ class Request
                 if(file_exists($name)) {
                     unlink($name);
                 }
-                unset(UploadedFile::$files[$name]);
             }
         }
     }

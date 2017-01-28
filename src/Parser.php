@@ -3,9 +3,6 @@ namespace Laravoole;
 
 class Parser
 {
-
-    protected static $uploaded_file_overrided = false;
-
     public static function parseHeaderLine($headerLines)
     {
         if (is_string($headerLines)) {
@@ -219,13 +216,8 @@ class Parser
 
                 $item = &static::getVariableRegisterTarget($arr, $meta);
                 $item = $meta['filename'];
-                UploadedFile::$files[$filename] = true;
                 unset($item);
                 $request->post += $arr;
-                if (!static::$uploaded_file_overrided) {
-                    require __DIR__ . DIRECTORY_SEPARATOR . 'override' . DIRECTORY_SEPARATOR . '_uploaded_file.php';
-                    static::$uploaded_file_overrided = true;
-                }
             }
 
             $current += $boundary_next_len;
