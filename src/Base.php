@@ -4,6 +4,8 @@ namespace Laravoole;
 use Exception;
 use ErrorException;
 
+use swoole_http_request;
+
 use Laravoole\Illuminate\Application;
 use Laravoole\Illuminate\Request as IlluminateRequest;
 
@@ -69,28 +71,17 @@ abstract class Base
         chdir(public_path());
     }
 
-    public function onRequest($request, $illuminate_request = false)
+    public function onRequest($request, $response)
     {
-        $psrRequest = $this->convertRequest($request);
-        return $this->onPsrRequest($psrRequest, $illuminate_request);
+        throw new Exception("not implemented", 1);
+
     }
 
-    protected function convertRequest($request)
+    public function handleRequest($request, IlluminateRequest $illuminate_request = null)
     {
-        if($request instanceof ServerRequestInterface) {
-            return $request;
-        } else {
-            throw new Exception("not implemented", 1);
-
-        }
-    }
-
-    public function onPsrRequest(ServerRequestInterface $psrRequest, $illuminate_request = false)
-    {
-        // for file system
         clearstatcache();
         if (config('laravoole.base_config.deal_with_public')) {
-            if ($response = $this->dealWithPublic($psrRequest->getUri())) {
+            if ($response = $this->dealWithPublic($request->getUri())) {
                 return $response;
             }
         }
@@ -99,15 +90,18 @@ abstract class Base
             $kernel = $this->kernel;
 
             if (!$illuminate_request) {
-                $illuminate_request = IlluminateRequest::createFromBase((new HttpFoundationFactory)->createRequest($psrRequest));
+                if ($request instanceof ServerRequestInterface) {
+                    $request = (new HttpFoundationFactory)->createRequest($request);
+                    $illuminate_request = IlluminateRequest::createFromBase($request);
+                } elseif ($request instanceof swoole_http_request) {
+                    $illuminate_request = $this->convertSwooleRequest($request);
+                } else {
+                    $illuminate_request = IlluminateRequest::createFromBase($request);
+                }
             }
             $this->app['events']->fire('laravoole.on_request', [$illuminate_request]);
 
             $illuminate_response = $kernel->handle($illuminate_request);
-            // Is gzip enabled and the client accept it?
-            $accept_gzip = config('laravoole.base_config.gzip') && stripos($psrRequest->getHeaderLine('Accept-Encoding'), 'gzip') !== false;
-
-            $response = (new DiactorosFactory)->createResponse($illuminate_response);
 
         } catch (\Exception $e) {
             echo '[ERR] ' . $e->getFile() . '(' . $e->getLine() . '): ' . $e->getMessage() . PHP_EOL;
@@ -122,6 +116,7 @@ abstract class Base
             if ($illuminate_request->hasSession()) {
                 $illuminate_request->getSession()->clear();
             }
+            $this->app['events']->fire('laravoole.on_requested', [$illuminate_request, $illuminate_response]);
 
             if ($this->app->isProviderLoaded(\Illuminate\Auth\AuthServiceProvider::class)) {
                 $this->app->register(\Illuminate\Auth\AuthServiceProvider::class, [], true);
@@ -129,28 +124,32 @@ abstract class Base
             }
 
         }
-        $response->accpetGzip = $accept_gzip;
-        return $response;
+        return $illuminate_response;
 
     }
 
-    protected function dealWithRequest($request, $classname = IlluminateRequest::class)
+    public function onPsrRequest(ServerRequestInterface $psrRequest)
+    {
+        $illuminate_response = $this->handleRequest($psrRequest);
+        return (new DiactorosFactory)->createResponse($illuminate_response);
+
+    }
+
+    protected function convertSwooleRequest(swoole_http_request $request, $classname = IlluminateRequest::class)
     {
 
-        $get = isset($request->get) ? $request->get : array();
-        $post = isset($request->post) ? $request->post : array();
-        $cookie = isset($request->cookie) ? $request->cookie : array();
-        $server = isset($request->server) ? $request->server : array();
-        $header = isset($request->header) ? $request->header : array();
-        $files = isset($request->files) ? $request->files : array();
-        // $attr = isset($request->files) ? $request->files : array();
+        $get = isset($request->get) ? $request->get : [];
+        $post = isset($request->post) ? $request->post : [];
+        $cookie = isset($request->cookie) ? $request->cookie : [];
+        $server = isset($request->server) ? $request->server : [];
+        $header = isset($request->header) ? $request->header : [];
+        $files = isset($request->files) ? $request->files : [];
+        // $attr = isset($request->files) ? $request->files : [];
 
-        $content = $request->getRawContent() ?: null;
+        $content = $request->rawContent() ?: null;
 
         return new $classname($get, $post, []/* attributes */, $cookie, $files, $server, $content);
     }
-
-
 
     public function endResponse($responseCallback, $content)
     {

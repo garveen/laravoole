@@ -20,12 +20,13 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         parent::start();
     }
 
-    public function onRequest($request, $response, $illuminate_request = false)
+    public function onRequest($request, $response)
     {
         // convert request
         $request = $this->ucHeaders($request);
         // provide response callback
-        return parent::onRequest($request, $response, $illuminate_request);
+        $illuminate_response = parent::handleRequest($request);
+        return $this->dealWithResponse($response, $illuminate_response);
     }
 
     protected function ucHeaders($request)
@@ -45,6 +46,45 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         $request->server = $server;
         $request->header = $uc_header;
         return $request;
+    }
+
+
+    protected function dealWithResponse($response, $illuminate_response)
+    {
+
+        $accept_gzip = config('laravoole.base_config.gzip') && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
+        // status
+        $response->status($illuminate_response->getStatusCode());
+        // headers
+        $response->header('Server', config('laravoole.base_config.server'));
+        foreach ($illuminate_response->headers->allPreserveCase() as $name => $values) {
+            foreach ($values as $value) {
+                $response->header($name, $value);
+            }
+        }
+        // cookies
+        foreach ($illuminate_response->headers->getCookies() as $cookie) {
+            $response->rawcookie(
+                $cookie->getName(),
+                urlencode($cookie->getValue()),
+                $cookie->getExpiresTime(),
+                $cookie->getPath(),
+                $cookie->getDomain(),
+                $cookie->isSecure(),
+                $cookie->isHttpOnly()
+            );
+        }
+        // content
+        $content = $illuminate_response->getContent();
+
+        // check gzip
+        if ($accept_gzip && isset($response->header['Content-Type'])) {
+            $mime = $response->header['Content-Type'];
+            if (strlen($content) > config('laravoole.base_config.gzip_min_length') && is_mime_gzip($mime)) {
+                $response->gzip(config('laravoole.base_config.gzip'));
+            }
+        }
+        $this->endResponse($response, $content);
     }
 
 }

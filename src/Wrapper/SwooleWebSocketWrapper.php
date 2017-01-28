@@ -186,13 +186,13 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
                 'codec' => $this->connections[$response->request->fd]['protocol'],
             ]);
         }
-
-        $this->onRequest($request, $response, $illuminateRequest);
+        $illuminate_response = parent::handleRequest($illuminateRequest);
+        $this->dealWithResponse($response, $illuminate_response);
 
         $request->laravooleInfo = $illuminateRequest->getLaravooleInfo();
     }
 
-    public function endResponse($responseCallback, $content)
+    public function endResponse($response, $content)
     {
         if (isset($response->request)) {
             // This is a websocket request

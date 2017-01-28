@@ -119,41 +119,5 @@ class Swoole extends Base implements ServerInterface
         return $this->server->master_pid;
     }
 
-    protected function dealWithResponse($response, $illuminate_response, $accept_gzip)
-    {
-
-        // status
-        $response->status($illuminate_response->getStatusCode());
-        // headers
-        $response->header('Server', config('laravoole.base_config.server'));
-        foreach ($illuminate_response->headers->allPreserveCase() as $name => $values) {
-            foreach ($values as $value) {
-                $response->header($name, $value);
-            }
-        }
-        // cookies
-        foreach ($illuminate_response->headers->getCookies() as $cookie) {
-            $response->rawcookie(
-                $cookie->getName(),
-                urlencode($cookie->getValue()),
-                $cookie->getExpiresTime(),
-                $cookie->getPath(),
-                $cookie->getDomain(),
-                $cookie->isSecure(),
-                $cookie->isHttpOnly()
-            );
-        }
-        // content
-        $content = $illuminate_response->getContent();
-
-        // check gzip
-        if ($accept_gzip && isset($response->header['Content-Type'])) {
-            $mime = $response->header['Content-Type'];
-            if (strlen($content) > config('laravoole.base_config.gzip_min_length') && is_mime_gzip($mime)) {
-                $response->gzip(config('laravoole.base_config.gzip'));
-            }
-        }
-        $this->endResponse($response, $content);
-    }
 
 }
