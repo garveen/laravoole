@@ -90,10 +90,10 @@ abstract class Base
 
             $content = $illuminate_response->getContent();
 
-            if (strlen($content) === 0) {
-                $obContent = ob_get_contents();
-                strlen($obContent) !== 0 AND $illuminate_response->setContent($obContent);
+            if (strlen($content) === 0 && ob_get_length() > 0) {
+                $illuminate_response->setContent(ob_get_contents());
             }
+
             ob_end_clean();
 
             // Is gzip enabled and the client accept it?
