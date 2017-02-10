@@ -76,6 +76,9 @@ abstract class Base
         }
 
         try {
+
+            ob_start();
+
             $kernel = $this->kernel;
 
             if (!$illuminate_request) {
@@ -84,6 +87,15 @@ abstract class Base
             $this->app['events']->fire('laravoole.on_request', [$illuminate_request]);
 
             $illuminate_response = $kernel->handle($illuminate_request);
+
+            $content = $illuminate_response->getContent();
+
+            if (strlen($content) === 0 && ob_get_length() > 0) {
+                $illuminate_response->setContent(ob_get_contents());
+            }
+
+            ob_end_clean();
+
             // Is gzip enabled and the client accept it?
             $accept_gzip = config('laravoole.base_config.gzip') && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
 
