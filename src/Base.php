@@ -117,7 +117,11 @@ abstract class Base
 
             if ($this->app->isProviderLoaded(\Illuminate\Auth\AuthServiceProvider::class)) {
                 $this->app->register(\Illuminate\Auth\AuthServiceProvider::class, [], true);
-                Facade::clearResolvedInstance('auth');
+	            Facade::clearResolvedInstance('auth');
+	            if( class_exists( \App\Providers\AuthServiceProvider::class ) && $this->app->isProviderLoaded(\App\Providers\AuthServiceProvider::class ) )
+	            {
+		            $this->app->register(\App\Providers\AuthServiceProvider::class, [], true);
+	            }
             }
 
             return $response;
