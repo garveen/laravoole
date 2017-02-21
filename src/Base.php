@@ -189,6 +189,8 @@ abstract class Base
         foreach ($cookies->getQueuedCookies() as $name => $cookie) {
             $cookies->unqueue($name);
         }
+
+        //...
     }
 
     public function endResponse($response, $content)
