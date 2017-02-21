@@ -8,6 +8,7 @@ use Laravoole\Illuminate\Application;
 use Laravoole\Illuminate\Request as IlluminateRequest;
 
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Contracts\Cookie\QueueingFactory as CookieJar;
 
 abstract class Base
 {
@@ -84,6 +85,9 @@ abstract class Base
             if (!$illuminate_request) {
                 $illuminate_request = $this->dealWithRequest($request);
             }
+
+            $this->clean($illuminate_request);
+
             $this->app['events']->fire('laravoole.on_request', [$illuminate_request]);
 
             $illuminate_response = $kernel->handle($illuminate_request);
@@ -176,6 +180,15 @@ abstract class Base
             }
         }
         $this->endResponse($response, $content);
+    }
+
+    protected function clean(IlluminateRequest $request)
+    {
+        // Clean laravel cookie queue
+        $cookies = $this->app->make(CookieJar::class);
+        foreach ($cookies->getQueuedCookies() as $name => $cookie) {
+            $cookies->unqueue($name);
+        }
     }
 
     public function endResponse($response, $content)
