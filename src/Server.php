@@ -2,16 +2,25 @@
 namespace Laravoole;
 
 use Exception;
+use ReflectionClass;
+
+use Laravoole\Wrapper\ServerInterface;
 
 class Server
 {
-
     protected $wrapper;
 
-    public function __construct($wrapper)
+    public function __construct($wrapper, $wrapper_file = '')
     {
-        $class = "Laravoole\\Wrapper\\{$wrapper}Wrapper";
-        $this->wrapper = $class;
+        if (!class_exists($wrapper)) {
+            require $wrapper_file;
+        }
+        $ref = new ReflectionClass($wrapper);
+        if(!$ref->implementsInterface(ServerInterface::class)) {
+            throw new Exception("$wrapper must be instance of Laravoole\\Wrapper\\ServerInterface", 1);
+        }
+
+        $this->wrapper = $wrapper;
     }
 
     public function getWrapper()

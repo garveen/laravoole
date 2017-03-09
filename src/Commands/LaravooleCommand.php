@@ -2,6 +2,8 @@
 
 namespace Laravoole\Commands;
 
+use ReflectionClass;
+
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -102,7 +104,11 @@ class LaravooleCommand extends Command
             exit;
         }
 
-        $wrapper = "Laravoole\\Wrapper\\{$mode}Wrapper";
+        if(!class_exists($wrapper = "Laravoole\\Wrapper\\{$mode}Wrapper")) {
+            $wrapper = $mode;
+        }
+        $ref = new ReflectionClass($wrapper);
+        $wrapper_file = $ref->getFileName();
 
         $handler_config = [];
         $params = $wrapper::getParams();
@@ -132,7 +138,8 @@ class LaravooleCommand extends Command
         $configs = [
             'host' => config('laravoole.base_config.host'),
             'port' => config('laravoole.base_config.port'),
-            'mode' => config('laravoole.base_config.mode'),
+            'wrapper_file' => $wrapper_file,
+            'wrapper' => $wrapper,
             'pid_file' => config('laravoole.base_config.pid_file'),
             'root_dir' => base_path(),
             // for swoole / workerman

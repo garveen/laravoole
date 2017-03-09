@@ -6,7 +6,7 @@ use swoole_http_server;
 use Laravoole\Base;
 use Exception;
 
-class Swoole extends Base implements ServerInterface
+abstract class Swoole extends Base
 {
 
     protected $callbacks = [];
