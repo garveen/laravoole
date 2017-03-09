@@ -23,14 +23,13 @@ abstract class Workerman extends Base implements ServerInterface
             'transport',
             'daemonize',
             'stdoutFile',
-            'pidFile',
             'reusePort',
         ];
     }
 
     public function start()
     {
-
+        $this->set(['pidFile' => $this->pid_file]);
         if (!empty($this->handler_config)) {
             $this->set($this->handler_config);
         }
