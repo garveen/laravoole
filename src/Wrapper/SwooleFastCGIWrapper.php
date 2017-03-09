@@ -6,6 +6,9 @@ use swoole_server;
 
 class SwooleFastCGIWrapper extends Swoole implements ServerInterface
 {
+    protected $max_request = 0;
+    protected $request_count = 0;
+
     public function __construct($host, $port)
     {
         $this->server = new swoole_server($host, $port);
@@ -14,8 +17,13 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
     public function start()
     {
         if (!empty($this->handler_config)) {
+            if (isset($this->handler_config['max_request'])) {
+                $this->max_request = $this->handler_config['max_request'];
+            }
+            $this->handler_config['max_request'] = 0;
             $this->server->set($this->handler_config);
         }
+
         $this->server->on('Start', [$this, 'onServerStart']);
         $this->server->on('Receive', [$this, 'onReceive']);
         $this->server->on('Shutdown', [$this, 'onServerShutdown']);
@@ -26,7 +34,6 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
 
     public function onReceive($serv, $fd, $from_id, $data)
     {
-
         return $this->fastcgi->receive($fd, $data);
     }
 
@@ -43,13 +50,19 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
     public function closeCallback($fd)
     {
         $this->server->close($fd);
+        if ($this->max_request) {
+            if ($this->request_count++ > $this->max_request) {
+                $this->server->stop();
+            }
+        }
+
     }
 
     public function onWorkerStart($serv, $worker_id)
     {
         fwrite(STDOUT, "Swoole worker $worker_id starting\n");
         parent::onWorkerStart($serv, $worker_id);
-        $this->fastcgi = new FastCgi([$this, 'requestCallback'], [$this, 'sendCallback'], [$this, 'closeCallback'], function($level, $info) {
+        $this->fastcgi = new FastCgi([$this, 'requestCallback'], [$this, 'sendCallback'], [$this, 'closeCallback'], function ($level, $info) {
             fwrite(STDOUT, "$level $info");
         });
         // override
