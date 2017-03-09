@@ -136,9 +136,9 @@ class LaravooleCommand extends Command
 
         $host = config('laravoole.base_config.host');
         $port = config('laravoole.base_config.port');
-        $socket = stream_socket_server("tcp://{$host}:{$port}");
+        $socket = @stream_socket_server("tcp://{$host}:{$port}");
         if(!$socket) {
-            throw new Exception("Address {$host}:{$port} already in use", 1);
+            throw new \Exception("Address {$host}:{$port} already in use", 1);
         } else {
             fclose($socket);
         }
