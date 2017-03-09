@@ -153,7 +153,12 @@ abstract class Base
     protected function clean(IlluminateRequest $request)
     {
         if ($request->hasSession()) {
-            $request->getSession()->clear();
+            $session = $request->getSession();
+            if (is_callable([$session, 'clear'])) {
+                $session->clear();
+            } else {
+                $session->flush();
+            }
         }
 
         // Clean laravel cookie queue
