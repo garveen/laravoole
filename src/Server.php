@@ -1,8 +1,6 @@
 <?php
 namespace Laravoole;
 
-use Exception;
-
 class Server
 {
 
@@ -10,8 +8,7 @@ class Server
 
     public function __construct($wrapper)
     {
-        $class = "Laravoole\\Wrapper\\{$wrapper}Wrapper";
-        $this->wrapper = $class;
+        $this->wrapper = Util::checkWrapper($wrapper);
     }
 
     public function getWrapper()

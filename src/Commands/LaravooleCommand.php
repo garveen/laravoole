@@ -3,6 +3,7 @@
 namespace Laravoole\Commands;
 
 use Illuminate\Console\Command;
+use Laravoole\Util;
 use Symfony\Component\Console\Input\InputOption;
 
 class LaravooleCommand extends Command
@@ -102,7 +103,7 @@ class LaravooleCommand extends Command
             exit;
         }
 
-        $wrapper = "Laravoole\\Wrapper\\{$mode}Wrapper";
+        $wrapper = Util::checkWrapper($mode);
 
         $handler_config = [];
         $params = $wrapper::getParams();
