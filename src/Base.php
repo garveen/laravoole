@@ -53,8 +53,17 @@ abstract class Base
             spl_autoload_unregister($function);
         }
 
-        require $this->root_dir . '/bootstrap/autoload.php';
+        if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+            require __DIR__ . '/../vendor/autoload.php';
+        } else {
+            require $this->root_dir . '/bootstrap/autoload.php';
+        }
         $this->app = $this->getApp();
+
+        if (isset($this->wrapper_config['environment_path'])) {
+            var_dump($this->wrapper_config['environment_path']);
+            $this->app->useEnvironmentPath($this->wrapper_config['environment_path']);
+        }
 
         $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
         $virus = function() {
