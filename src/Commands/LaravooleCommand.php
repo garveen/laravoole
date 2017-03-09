@@ -134,10 +134,18 @@ class LaravooleCommand extends Command
             $handler_config['dispatch_mode'] = 2;
         }
 
-        global $argv;
+        $host = config('laravoole.base_config.host');
+        $port = config('laravoole.base_config.port');
+        $socket = stream_socket_server("tcp://{$host}:{$port}");
+        if(!$socket) {
+            throw new Exception("Address {$host}:{$port} already in use", 1);
+        } else {
+            fclose($socket);
+        }
+
         $configs = [
-            'host' => config('laravoole.base_config.host'),
-            'port' => config('laravoole.base_config.port'),
+            'host' => $host,
+            'port' => $port,
             'wrapper_file' => $wrapper_file,
             'wrapper' => $wrapper,
             'pid_file' => config('laravoole.base_config.pid_file'),
