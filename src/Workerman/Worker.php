@@ -13,7 +13,6 @@ class Worker extends \Workerman\Worker
 	    self::installSignal();
 	    self::saveMasterPid();
 	    self::forkWorkers();
-	    self::displayUI();
 	    self::resetStd();
 	    self::monitorWorkers();
 	}
