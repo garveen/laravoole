@@ -11,7 +11,7 @@ Laravel on Swoole Or Workerman
 		<td>php</td><td>>=5.5.16</td>
 	</tr>
 	<tr>
-		<td>laravel/framework</td><td>5.1.* | 5.2.* | 5.3.*</td>
+		<td>laravel/laravel</td><td>^ 5.1</td>
 	</tr>
 </table>
 
@@ -36,7 +36,7 @@ Laravel on Swoole Or Workerman
 To get started, add laravoole to you composer.json file and run `composer update`:
 
 ```
-"garveen/laravoole": "~0.2"
+"garveen/laravoole": "~0.4"
 ```
 
 or just run shell command:
@@ -88,17 +88,21 @@ LARAVOOLE_HOST=0.0.0.0
 
 ##Events
 
-By now, there are only two events, `laravoole.on_request` and `laravoole.swoole.websocket.on_close`. You can handle events by editing `EventServiceProvider`:
+You can handle events by editing `EventServiceProvider`:
 
 ```php
 public function boot()
 {
     parent::boot();
-    \Event::listen('laravoole.on_request', function ($request) {
+    \Event::listen('laravoole.requesting', function ($request) {
         \Log::info($request->segments());
     });
 }
 ```
+
+- `laravoole.requesting`(`Illuminate\Http\Request`)
+- `laravoole.requested`(`Illuminate\Http\Request`, `Illuminate\Http\Response`)
+- `laravoole.swoole.websocket.closing`(`Laravoole\Request`, int `$fd`)
 
 ##base_config
 
