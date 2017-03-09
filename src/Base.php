@@ -10,6 +10,7 @@ use Laravoole\Illuminate\Application;
 use Laravoole\Illuminate\Request as IlluminateRequest;
 
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Contracts\Cookie\QueueingFactory as CookieJar;
 use Psr\Http\Message\ServerRequestInterface;
 
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
@@ -81,8 +82,11 @@ abstract class Base
     {
         clearstatcache();
 
+        $kernel = $this->kernel;
+
         try {
-            $kernel = $this->kernel;
+
+            ob_start();
 
             if (!$illuminate_request) {
                 if ($request instanceof ServerRequestInterface) {
@@ -94,9 +98,19 @@ abstract class Base
                     $illuminate_request = IlluminateRequest::createFromBase($request);
                 }
             }
+
             $this->app['events']->fire('laravoole.on_request', [$illuminate_request]);
 
             $illuminate_response = $kernel->handle($illuminate_request);
+
+            $content = $illuminate_response->getContent();
+
+            if (strlen($content) === 0 && ob_get_length() > 0) {
+                $illuminate_response->setContent(ob_get_contents());
+            }
+
+            ob_end_clean();
+
 
         } catch (\Exception $e) {
             echo '[ERR] ' . $e->getFile() . '(' . $e->getLine() . '): ' . $e->getMessage() . PHP_EOL;
@@ -108,15 +122,9 @@ abstract class Base
             if (isset($illuminate_response)) {
                 $kernel->terminate($illuminate_request, $illuminate_response);
             }
-            if ($illuminate_request->hasSession()) {
-                $illuminate_request->getSession()->clear();
-            }
             $this->app['events']->fire('laravoole.on_requested', [$illuminate_request, $illuminate_response]);
 
-            if ($this->app->isProviderLoaded(\Illuminate\Auth\AuthServiceProvider::class)) {
-                $this->app->register(\Illuminate\Auth\AuthServiceProvider::class, [], true);
-                Facade::clearResolvedInstance('auth');
-            }
+            $this->clean($illuminate_request);
 
         }
         return $illuminate_response;
@@ -144,6 +152,24 @@ abstract class Base
         $content = $request->rawContent() ?: null;
 
         return new $classname($get, $post, []/* attributes */, $cookie, $files, $server, $content);
+    }
+
+    protected function clean(IlluminateRequest $request)
+    {
+        if ($request->hasSession()) {
+            $request->getSession()->clear();
+        }
+
+        // Clean laravel cookie queue
+        $cookies = $this->app->make(CookieJar::class);
+        foreach ($cookies->getQueuedCookies() as $name => $cookie) {
+            $cookies->unqueue($name);
+        }
+
+        if ($this->app->isProviderLoaded(\Illuminate\Auth\AuthServiceProvider::class)) {
+            $this->app->register(\Illuminate\Auth\AuthServiceProvider::class, [], true);
+            Facade::clearResolvedInstance('auth');
+        }
     }
 
     public function endResponse($responseCallback, $content)

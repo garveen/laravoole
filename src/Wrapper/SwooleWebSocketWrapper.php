@@ -153,7 +153,8 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
         if (!$frame->finish) {
             return;
         }
-        $data = $this->connections[$frame->fd]['protocol']::decode($this->unfinished[$frame->fd]);
+        $protocol = $this->connections[$frame->fd]['protocol'];
+        $data = $protocol::decode($this->unfinished[$frame->fd]);
         if (is_null($data)) {
             return;
         }
@@ -195,7 +196,8 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
     {
         if (isset($response->request)) {
             // This is a websocket request
-            $data = $this->connections[$response->request->fd]['protocol']::encode(
+            $protocol = $this->connections[$response->request->fd]['protocol'];
+            $data = $protocol::encode(
                 $response->http_status,
                 $response->request->method,
                 $content,
