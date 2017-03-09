@@ -95,7 +95,7 @@ abstract class Base
                 }
             }
 
-            $this->app['events']->fire('laravoole.on_request', [$illuminate_request]);
+            $this->app['events']->fire('laravoole.requesting', [$illuminate_request]);
 
             $illuminate_response = $kernel->handle($illuminate_request);
 
@@ -118,11 +118,12 @@ abstract class Base
             if (isset($illuminate_response)) {
                 $kernel->terminate($illuminate_request, $illuminate_response);
             }
-            $this->app['events']->fire('laravoole.on_requested', [$illuminate_request, $illuminate_response]);
+            $this->app['events']->fire('laravoole.requested', [$illuminate_request, $illuminate_response]);
 
             $this->clean($illuminate_request);
 
         }
+
         return $illuminate_response;
 
     }
