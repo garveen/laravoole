@@ -24,12 +24,11 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
             $this->server->set($this->handler_config);
         }
 
-        $this->server->on('Start', [$this, 'onServerStart']);
-        $this->server->on('Receive', [$this, 'onReceive']);
-        $this->server->on('Shutdown', [$this, 'onServerShutdown']);
-        $this->server->on('WorkerStart', [$this, 'onWorkerStart']);
+        $this->callbacks = array_merge([
+            'Receive' => [$this, 'onReceive'],
+        ], $this->callbacks);
 
-        $this->server->start();
+        parent::start();
     }
 
     public function onReceive($serv, $fd, $from_id, $data)

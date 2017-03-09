@@ -52,10 +52,6 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
 
     public function start()
     {
-        if (!empty($this->handler_config)) {
-            $this->server->set($this->handler_config);
-        }
-
         $this->defaultProtocol = $this->wrapper_config['websocket_default_protocol'];
 
         static::registerCodec($this->wrapper_config['websocket_protocols']);

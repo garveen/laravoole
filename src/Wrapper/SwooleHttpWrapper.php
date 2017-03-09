@@ -17,6 +17,9 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         if (!empty($this->handler_config)) {
             $this->server->set($this->handler_config);
         }
+        $this->callbacks = array_merge([
+            'Request' => [$this, 'onRequest'],
+        ], $this->callbacks);
         parent::start();
     }
 

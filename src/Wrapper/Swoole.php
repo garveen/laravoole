@@ -59,7 +59,6 @@ abstract class Swoole extends Base
             'Start' => [$this, 'onServerStart'],
             'Shutdown' => [$this, 'onServerShutdown'],
             'WorkerStart' => [$this, 'onWorkerStart'],
-            'Request' => [$this, 'onRequest'],
         ], $this->callbacks);
         if (isset($this->wrapper_config['swoole_ontask'])) {
             $callbacks['Task'] = $this->wrapper_config['swoole_ontask'];
