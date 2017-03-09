@@ -8,7 +8,6 @@ spl_autoload_register(function ($class) {
 });
 $configs = unserialize($input);
 
-$argv = $configs['argv'];
 $server = new Laravoole\Server($configs['wrapper'], $configs['wrapper_file']);
 $server->start(
     $configs['host'],
