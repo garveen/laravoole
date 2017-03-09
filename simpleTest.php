@@ -59,32 +59,44 @@ foreach ($handlers as $mode => $handler_config) {
 // wait for services start
 sleep(1);
 
+ini_set('default_socket_timeout', 1);
+
+$errors = [];
+
 function check($output)
 {
+    global $errors;
     if (!strpos($output, 'Laravel')) {
-        throw new Exception("failed", 1);
+        ob_start();
+        debug_print_backtrace(2);
+        $errors[] = ob_get_clean();
+        echo "failed\n";
+    } else {
+        echo "checked\n";
     }
 }
 
 require 'vendor/autoload.php';
-check(file_get_contents('http://localhost:9050'));
+check(@file_get_contents('http://localhost:9050'));
 
 use WebSocket\Client as WebSocketClient;
 
-$client = new WebSocketClient("ws://localhost:9052");
-$client->send(json_encode([
-    'method' => '/',
-    'params' => ['hello' => 'world'],
-    'id' => 1,
-]));
+try {
+    $client = new WebSocketClient("ws://localhost:9052");
+    $client->send(json_encode([
+        'method' => '/',
+        'params' => ['hello' => 'world'],
+        'id' => 1,
+    ]));
 
-check($client->receive());
+    check($client->receive());
+} catch (Exception $e) {
+    check('');
+}
 
-check(file_get_contents('http://localhost:9052'));
+check(@file_get_contents('http://localhost:9052'));
 
 use Adoy\FastCGI\Client as FastCgiClient;
-
-$client = new FastCgiClient('localhost', '9051');
 
 $fastCgiParams = [
     'GATEWAY_INTERFACE' => 'FastCGI/1.0',
@@ -100,18 +112,38 @@ $fastCgiParams = [
     'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
     'CONTENT_LENGTH' => 0,
 ];
+try {
+    $client = new FastCgiClient('localhost', '9051');
+    check($client->request($fastCgiParams, ''));
+} catch (Exception $e) {
+    check('');
+}
 
-check($client->request($fastCgiParams, ''));
+try {
+    $client = new FastCgiClient('localhost', '9053');
+    check($client->request($fastCgiParams, ''));
+} catch (Exception $e) {
+    check('');
+}
 
-$client = new FastCgiClient('localhost', '9053');
-check($client->request($fastCgiParams, ''));
-
-posix_kill((int) file_get_contents($pidFile = __DIR__ . "/WorkermanFastCGI.pid"), SIGINT);
-unlink($pidFile);
+$pid = (int) @file_get_contents($pidFile = __DIR__ . "/WorkermanFastCGI.pid");
+if ($pid && posix_kill($pid, SIGINT)) {
+    unlink($pidFile);
+}
 
 unset($handlers['WorkermanFastCGI']);
 
 foreach ($handlers as $mode => $handler_config) {
-    posix_kill((int) file_get_contents($pidFile = __DIR__ . "/{$mode}.pid"), SIGTERM);
-    unlink($pidFile);
+    $pid = (int) @file_get_contents($pidFile = __DIR__ . "/{$mode}.pid");
+    if ($pid && posix_kill($pid, SIGTERM)) {
+        unlink($pidFile);
+    }
 }
+
+if ($errors) {
+    foreach ($errors as $error) {
+        echo $error;
+    }
+    return 1;
+}
+return 0;
