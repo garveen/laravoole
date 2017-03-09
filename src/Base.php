@@ -57,18 +57,14 @@ abstract class Base
         $this->app = $this->getApp();
 
         $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
-        // from \Illuminate\Contracts\Console\Kernel
-        // do not using Http\Kernel here, because needs SetRequestForConsole
-        $this->app->bootstrapWith([
-            'Illuminate\Foundation\Bootstrap\DetectEnvironment',
-            'Illuminate\Foundation\Bootstrap\LoadConfiguration',
-            'Illuminate\Foundation\Bootstrap\ConfigureLogging',
-            'Illuminate\Foundation\Bootstrap\HandleExceptions',
-            'Illuminate\Foundation\Bootstrap\RegisterFacades',
-            'Illuminate\Foundation\Bootstrap\SetRequestForConsole',
-            'Illuminate\Foundation\Bootstrap\RegisterProviders',
-            'Illuminate\Foundation\Bootstrap\BootProviders',
-        ]);
+        $virus = function() {
+            // Insert bofore BootProviders
+            array_splice($this->bootstrappers, -1, 0, [\Illuminate\Foundation\Bootstrap\SetRequestForConsole::class]);
+        };
+        $virus = \Closure::bind($virus, $this->kernel, $this->kernel);
+        $virus();
+
+        $this->kernel->bootstrap();
         chdir(public_path());
     }
 
