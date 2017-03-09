@@ -34,7 +34,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         }
         // provide response callback
         $illuminate_response = parent::handleRequest($request);
-        return $this->handleResponse($response, $illuminate_response);
+        return $this->handleResponse($request, $response, $illuminate_response);
     }
 
     protected function ucHeaders($request)
@@ -57,10 +57,11 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
     }
 
 
-    protected function handleResponse($response, $illuminate_response)
+    protected function handleResponse($request, $response, $illuminate_response)
     {
 
         $accept_gzip = config('laravoole.base_config.gzip') && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
+
         // status
         $response->status($illuminate_response->getStatusCode());
         // headers
