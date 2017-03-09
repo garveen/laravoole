@@ -48,12 +48,6 @@ abstract class Base
 
     public function prepareKernel()
     {
-        // unregister temporary autoloader
-        foreach (spl_autoload_functions() as $function) {
-            spl_autoload_unregister($function);
-        }
-
-        require $this->root_dir . '/bootstrap/autoload.php';
         $this->app = $this->getApp();
 
         $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
