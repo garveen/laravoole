@@ -114,6 +114,9 @@ This section configures laravoole itself.
 
 `WorkermanFastCGI` uses workerman to response fastcgi requests (just like php-fpm)
 
+####user defined wrappers
+
+You can make a new wrapper implements `Laravoole\Wrapper\ServerInterface`, and put its full class name to `mode`.
 
 ###pid_file
 
