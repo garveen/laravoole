@@ -20,7 +20,7 @@ interface ServerInterface
     /**
      * Normally you did not need to implement this method if your wrapper extends Laravoole\Base
      * @param  string $pid_file
-     * @param  wtring $root_dir
+     * @param  string $root_dir
      * @param  array  $handler_config
      * @param  array  $wrapper_config
      * @return null
