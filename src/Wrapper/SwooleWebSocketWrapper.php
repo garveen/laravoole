@@ -11,6 +11,8 @@ use Laravoole\Response;
 use Laravoole\WebsocketCodec\Json;
 use Laravoole\WebsocketCodec\JsonRpc;
 
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
 class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterface
 {
     protected $defaultProtocol;
@@ -182,8 +184,8 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
                 'codec' => $this->connections[$response->request->fd]['protocol'],
             ]);
         }
-        $illuminate_response = parent::handleRequest($illuminateRequest);
-        $this->handleResponse($request, $response, $illuminate_response);
+        $illuminateResponse = parent::handleRequest($illuminateRequest);
+        $this->handleResponse($request, $response, $illuminateResponse);
 
         $request->laravooleInfo = $illuminateRequest->getLaravooleInfo();
     }
@@ -191,6 +193,9 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
     public function endResponse($response, $content)
     {
         if (isset($response->request)) {
+            if (!is_string($content)) {
+                $content = file_get_contents($content());
+            }
             // This is a websocket request
             $protocol = $this->connections[$response->request->fd]['protocol'];
             $data = $protocol::encode(

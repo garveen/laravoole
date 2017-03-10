@@ -183,10 +183,14 @@ abstract class Base
         }
     }
 
-    public function endResponse($responseCallback, $content)
+    public function endResponse($response, $content)
     {
-        // send content & close
-        $responseCallback->end($content);
+        if (is_string($content)) {
+            $response->sendfile($content);
+        } else {
+            // send content & close
+            $response->end($content);
+        }
     }
 
     protected function getApp()

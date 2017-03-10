@@ -33,8 +33,8 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
             }
         }
         // provide response callback
-        $illuminate_response = parent::handleRequest($request);
-        return $this->handleResponse($request, $response, $illuminate_response);
+        $illuminateResponse = parent::handleRequest($request);
+        return $this->handleResponse($request, $response, $illuminateResponse);
     }
 
     protected function ucHeaders($request)
@@ -57,22 +57,22 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
     }
 
 
-    protected function handleResponse($request, $response, $illuminate_response)
+    protected function handleResponse($request, $response, $illuminateResponse)
     {
 
         $accept_gzip = config('laravoole.base_config.gzip') && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
 
         // status
-        $response->status($illuminate_response->getStatusCode());
+        $response->status($illuminateResponse->getStatusCode());
         // headers
         $response->header('Server', config('laravoole.base_config.server'));
-        foreach ($illuminate_response->headers->allPreserveCase() as $name => $values) {
+        foreach ($illuminateResponse->headers->allPreserveCase() as $name => $values) {
             foreach ($values as $value) {
                 $response->header($name, $value);
             }
         }
         // cookies
-        foreach ($illuminate_response->headers->getCookies() as $cookie) {
+        foreach ($illuminateResponse->headers->getCookies() as $cookie) {
             $response->rawcookie(
                 $cookie->getName(),
                 urlencode($cookie->getValue()),
@@ -84,16 +84,21 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
             );
         }
         // content
-        $content = $illuminate_response->getContent();
-
-        // check gzip
-        if ($accept_gzip && isset($response->header['Content-Type'])) {
-            $mime = $response->header['Content-Type'];
-            if (strlen($content) > config('laravoole.base_config.gzip_min_length') && is_mime_gzip($mime)) {
-                $response->gzip(config('laravoole.base_config.gzip'));
+        if ($illuminateResponse instanceof BinaryFileResponse) {
+            $content = function() use ($illuminateResponse) {
+                return $illuminateResponse->getFile()->getPathname();
+            };
+        } else {
+            $content = $illuminateResponse->getContent();
+            // check gzip
+            if ($accept_gzip && isset($response->header['Content-Type'])) {
+                $mime = $response->header['Content-Type'];
+                if (strlen($content) > config('laravoole.base_config.gzip_min_length') && is_mime_gzip($mime)) {
+                    $response->gzip(config('laravoole.base_config.gzip'));
+                }
             }
+            $this->endResponse($response, $content);
         }
-        $this->endResponse($response, $content);
     }
 
 
