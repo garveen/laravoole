@@ -36,7 +36,7 @@ Laravel on Swoole Or Workerman
 To get started, add laravoole to you composer.json file and run `composer update`:
 
 ```
-"garveen/laravoole": "~0.4"
+"garveen/laravoole": "^0.4.0"
 ```
 
 or just run shell command:
@@ -61,6 +61,16 @@ Once composer done its job, you need to register Laravel service provider, in yo
 ```shell
 php artisan laravoole [start | stop | reload | reload_task | restart | quit]
 ```
+
+##Migrations
+
+###Upgrade to 0.4
+
+Event names has changed:
+
+- `laravoole.on_request` => `laravoole.requesting`
+- `laravoole.on_requested` => `laravoole.requested`
+- `laravoole.swoole.websocket.on_close` => `laravoole.swoole.websocket.closing`
 
 ##Config
 
