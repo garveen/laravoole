@@ -71,6 +71,9 @@ abstract class Swoole extends Base
         $this->server->start();
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     public function onServerStart()
     {
         // put pid
@@ -89,6 +92,9 @@ abstract class Swoole extends Base
         });
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     public function onServerShutdown($serv)
     {
         @unlink($this->pid_file);

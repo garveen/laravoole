@@ -5,10 +5,8 @@ class Callbacks
 {
     public static function bootstrapingCallback($wrapper)
     {
-
-        $driver = new $wrapper->base_config['code_coverage']['driver'];
+        $driver = new $wrapper->base_config['code_coverage'];
         $wrapper->codeCoverage = $driver;
-        $driver->start($wrapper->base_config['code_coverage']['check']);
     }
 
     public static function bootstrapedCallback($wrapper)

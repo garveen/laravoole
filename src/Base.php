@@ -39,6 +39,10 @@ abstract class Base
 
     protected $diactorosFactory;
 
+    /**
+     * Start the server
+     * @codeCoverageIgnore
+     */
     public function start()
     {
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
@@ -70,7 +74,7 @@ abstract class Base
                 $callback($this);
             }
         }
-        $this->app = $this->createApp();
+        $this->app = $this->getApp();
 
         if (isset($this->wrapper_config['environment_path'])) {
             $this->app->useEnvironmentPath($this->wrapper_config['environment_path']);
@@ -94,6 +98,12 @@ abstract class Base
         $this->events = $this->app['events'];
     }
 
+    /**
+     * handle the request
+     * @codeCoverageIgnore
+     * @param  swoole_http_request $request
+     * @param  swoole_http_response $response
+     */
     public function onRequest($request, $response)
     {
         throw new Exception("not implemented", 1);
@@ -184,7 +194,7 @@ abstract class Base
         if ($request->hasSession()) {
             $session = $request->getSession();
             if (is_callable([$session, 'clear'])) {
-                $session->clear();
+                $session->clear(); // @codeCoverageIgnore
             } else {
                 $session->flush();
             }

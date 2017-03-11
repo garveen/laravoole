@@ -16,14 +16,17 @@ class LaravooleTest extends TestCase
             'deal_with_public' => true,
             'gzip' => true,
             'daemonize' => false,
+            'worker_num' => 1,
         ],
         'SwooleFastCGI' => [
             'port' => 9051,
             'daemonize' => false,
+            'worker_num' => 1,
         ],
         'SwooleWebsocket' => [
             'port' => 9052,
             'daemonize' => false,
+            'worker_num' => 1,
         ],
         'WorkermanFastCGI' => [
             'port' => 9053,
@@ -46,13 +49,13 @@ class LaravooleTest extends TestCase
         'CONTENT_LENGTH' => 0,
     ];
 
-    public function testCreateSwooleHttp()
+    public function testSwooleHttpCreate()
     {
         $this->createServer('SwooleHttp');
     }
 
     /**
-     * @depends testCreateSwooleHttp
+     * @depends testSwooleHttpCreate
      */
     public function testSwooleHttp()
     {
@@ -62,20 +65,20 @@ class LaravooleTest extends TestCase
     }
 
     /**
-     * @depends testCreateSwooleHttp
+     * @depends testSwooleHttpCreate
      */
-    public function testCloseSwooleHttp()
+    public function testSwooleHttpClose()
     {
         $this->closeSwoole('SwooleHttp');
     }
 
-    public function testCreateSwooleFastCgi()
+    public function testSwooleFastCgiCreate()
     {
         $this->createServer('SwooleFastCGI');
     }
 
     /**
-     * @depends testCreateSwooleFastCgi
+     * @depends testSwooleFastCgiCreate
      */
     public function testSwooleFastCgi($client)
     {
@@ -87,26 +90,23 @@ class LaravooleTest extends TestCase
     }
 
     /**
-     * @depends testCreateSwooleFastCgi
+     * @depends testSwooleFastCgiCreate
      */
-    public function testCloseSwooleFastCgi()
+    public function testSwooleFastCgiClose()
     {
         $this->closeSwoole('SwooleFastCGI');
     }
 
-    public function testCreateSwooleWebSocket()
+    public function testSwooleWebSocketCreate()
     {
         $this->createServer('SwooleWebsocket');
     }
 
     /**
-     * @depends testCreateSwooleWebSocket
+     * @depends testSwooleWebSocketCreate
      */
     public function testSwooleWebSocket()
     {
-        $this->assertRequests('http', function ($uri) {
-            return $this->requestHttp('http://localhost:9052' . $uri);
-        });
         $client = new WebSocketClient('ws://localhost:9052');
 
         for ($id = 1; $id < 3; $id++) {
@@ -121,23 +121,26 @@ class LaravooleTest extends TestCase
                 'error' => null,
             ]));
         }
+        $this->assertRequests('http', function ($uri) {
+            return $this->requestHttp('http://localhost:9052' . $uri);
+        });
     }
 
     /**
-     * @depends testCreateSwooleWebSocket
+     * @depends testSwooleWebSocketCreate
      */
-    public function testCloseSwooleWebSocket()
+    public function testSwooleWebSocketClose()
     {
         $this->closeSwoole('SwooleWebsocket');
     }
 
-    public function testCreateWorkermanFastCgi()
+    public function testWorkermanFastCgiCreate()
     {
         $this->createServer('WorkermanFastCGI');
     }
 
     /**
-     * @depends testCreateWorkermanFastCgi
+     * @depends testWorkermanFastCgiCreate
      */
     public function testWorkermanFastCgi($client)
     {
@@ -148,9 +151,9 @@ class LaravooleTest extends TestCase
     }
 
     /**
-     * @depends testCreateWorkermanFastCgi
+     * @depends testWorkermanFastCgiCreate
      */
-    public function testCloseWorkermanFastCgi()
+    public function testWorkermanFastCgiClose()
     {
         $this->closeWorkerman('WorkermanFastCGI');
     }
@@ -180,10 +183,8 @@ class LaravooleTest extends TestCase
             $result = $callback('/codeCoverage');
             if ($resultType == 'raw') {
                 $result = substr($result, 4 + strpos($result, "\r\n\r\n"));
-
             }
             $result = json_decode($result, true);
-
             $this->getTestResultObject()->getCodeCoverage()->append($result);
         }
     }
@@ -223,10 +224,33 @@ class LaravooleTest extends TestCase
             // 2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
         );
 
-        $process = proc_open(PHP_BINARY . ' ' . __DIR__ . '/../src/Entry.php ' . $mode, $descriptorspec, $pipes);
+        $config = $this->getConfig($mode);
+        $entry = 'Entry.php';
+
+        if (is_object($codeCoverage = $this->getTestResultObject()->getCodeCoverage())) {
+            self::$codeCoveraging = true;
+            $virus = function () {
+                return [
+                    'driver' => $this->driver,
+                    'check' => $this->shouldCheckForDeadAndUnused,
+                ];
+            };
+            $virus = \Closure::bind($virus, $codeCoverage, $codeCoverage);
+            extract($virus());
+            if($driver instanceof \SebastianBergmann\CodeCoverage\Driver\Xdebug) {
+                $entry = 'XdebugEntry.php';
+            } else {
+                $entry = 'PHPDBGEntry.php';
+            }
+            $entry .= $check ? ' true' : ' false';
+            $config['base_config']['code_coverage'] = get_class($driver);
+            $config['base_config']['callbacks']['bootstraping'][] = [Callbacks::class, 'bootstrapingCallback'];
+        }
+
+        $process = proc_open(PHP_BINARY . ' ' . __DIR__ . "/Entries/{$entry} {$mode}", $descriptorspec, $pipes);
 
         $this->assertTrue(is_resource($process));
-        $write = serialize($this->getConfig($mode));
+        $write = serialize($config);
 
         fwrite($pipes[0], $write);
         fclose($pipes[0]);
@@ -253,20 +277,6 @@ class LaravooleTest extends TestCase
         $laravooleConfig = include __DIR__ . '/../config/laravoole.php';
         $base_config = $laravooleConfig['base_config'];
         $base_config['callbacks']['bootstraped'][] = [Callbacks::class, 'bootstrapedCallback'];
-
-        if (is_object($codeCoverage = $this->getTestResultObject()->getCodeCoverage())) {
-            self::$codeCoveraging = true;
-            $virus = function () {
-                return [
-                    'driver' => get_class($this->driver),
-                    'check' => $this->shouldCheckForDeadAndUnused,
-                ];
-            };
-            $virus = \Closure::bind($virus, $codeCoverage, $codeCoverage);
-            $base_config['callbacks']['bootstraping'][] = [Callbacks::class, 'bootstrapingCallback'];
-            $base_config['code_coverage'] = $virus();
-        }
-
         $wrapper_config = $laravooleConfig['wrapper_config'];
         $wrapper_config['environment_path'] = __DIR__ . '/..';
 
