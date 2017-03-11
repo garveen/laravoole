@@ -5,6 +5,7 @@ use swoole_http_server;
 
 class SwooleHttpWrapper extends Swoole implements ServerInterface
 {
+    protected $accept_gzip = false;
 
     public function __construct($host, $port)
     {
@@ -21,6 +22,12 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
             'Request' => [$this, 'onRequest'],
         ], $this->callbacks);
         parent::start();
+    }
+
+    public function onWorkerStart($serv, $worker_id)
+    {
+        parent::onWorkerStart($serv, $worker_id);
+        $this->accept_gzip = config('laravoole.base_config.gzip');
     }
 
     public function onRequest($request, $response)
@@ -60,7 +67,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
     protected function handleResponse($request, $response, $illuminateResponse)
     {
 
-        $accept_gzip = config('laravoole.base_config.gzip') && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
+        $accept_gzip = $this->accept_gzip && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
 
         // status
         $response->status($illuminateResponse->getStatusCode());

@@ -33,6 +33,8 @@ abstract class Base
 
     protected $server;
 
+    protected $diactorosFactory;
+
     public function start()
     {
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
@@ -140,7 +142,10 @@ abstract class Base
     public function onPsrRequest(ServerRequestInterface $psrRequest)
     {
         $illuminate_response = $this->handleRequest($psrRequest);
-        return (new DiactorosFactory)->createResponse($illuminate_response);
+        if (!$this->diactorosFactory) {
+            $this->diactorosFactory = new DiactorosFactory;
+        }
+        return $this->diactorosFactory->createResponse($illuminate_response);
 
     }
 
