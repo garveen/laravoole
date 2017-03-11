@@ -88,7 +88,7 @@ class Response
     }
 
     /**
-     * 设置Http状�
+     * 设置Http状态
      * @param $code
      */
     public function status($code)
@@ -97,7 +97,7 @@ class Response
     }
 
     /**
-     * 设置Http头信�
+     * 设置Http头信息
      * @param $key
      * @param $value
      */
