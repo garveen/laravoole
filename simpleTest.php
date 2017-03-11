@@ -69,7 +69,7 @@ function check($output)
     if (!strpos($output, 'Laravel')) {
         ob_start();
         debug_print_backtrace(2);
-        $errors[] = ob_get_clean();
+        $errors[] = ob_get_clean() . $output;
         echo "failed\n";
     } else {
         echo "checked\n";
@@ -128,7 +128,7 @@ try {
 
 $pid = (int) @file_get_contents($pidFile = __DIR__ . "/WorkermanFastCGI.pid");
 if ($pid && posix_kill($pid, SIGINT)) {
-    unlink($pidFile);
+    @unlink($pidFile);
 }
 
 unset($handlers['WorkermanFastCGI']);
@@ -136,7 +136,7 @@ unset($handlers['WorkermanFastCGI']);
 foreach ($handlers as $mode => $handler_config) {
     $pid = (int) @file_get_contents($pidFile = __DIR__ . "/{$mode}.pid");
     if ($pid && posix_kill($pid, SIGTERM)) {
-        unlink($pidFile);
+        @unlink($pidFile);
     }
 }
 

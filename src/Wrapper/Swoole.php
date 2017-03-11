@@ -91,7 +91,7 @@ abstract class Swoole extends Base
 
     public function onServerShutdown($serv)
     {
-        unlink($this->pid_file);
+        @unlink($this->pid_file);
     }
 
     public static function getLogFile()
