@@ -7,14 +7,20 @@ class Callbacks
     {
         $driver = new $wrapper->base_config['code_coverage'];
         $wrapper->codeCoverage = $driver;
+        putenv('APP_KEY=base64:5lEhduX0I3FzAvKTTcVy3PyQ18356CgNpFWVlTzDlcg=');
+        putenv('LARAVOOLE_DEAL_WITH_PUBLIC=true');
     }
 
     public static function bootstrapedCallback($wrapper)
     {
+        (new \Laravoole\LaravooleServiceProvider($wrapper->getApp()))->register();
+
         $route = $wrapper->getApp()->router;
+
         $route->get('/laravoole', function () {
             return 'Laravoole';
         });
+
         $route->get('/download', function () {
             return response()->download('index.php');
         });

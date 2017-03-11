@@ -29,7 +29,7 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
         ], $this->callbacks);
 
         parent::start();
-    }
+    } // @codeCoverageIgnore
 
     public function onReceive($serv, $fd, $from_id, $data)
     {
@@ -51,7 +51,7 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
         $this->server->close($fd);
         if ($this->max_request) {
             if ($this->request_count++ > $this->max_request) {
-                $this->server->stop();
+                $this->server->stop(); // @codeCoverageIgnore
             }
         }
 

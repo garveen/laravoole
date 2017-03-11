@@ -12,7 +12,7 @@ class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
         if (file_exists(__DIR__ . '/../../vendor/workerman/workerman/Autoloader.php')) {
             require __DIR__ . '/../../vendor/workerman/workerman/Autoloader.php';
         } else {
-            require __DIR__ . '/../../../../workerman/workerman/Autoloader.php';
+            require __DIR__ . '/../../../../workerman/workerman/Autoloader.php'; // @codeCoverageIgnore
         }
         $this->server = new Worker("tcp://{$host}:{$port}");
     }

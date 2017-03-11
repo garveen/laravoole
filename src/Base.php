@@ -90,6 +90,7 @@ abstract class Base
 
         $this->kernel->bootstrap();
         chdir(public_path());
+
         if (isset($this->base_config['callbacks']['bootstraped'])) {
             foreach ($this->base_config['callbacks']['bootstraped'] as $callback) {
                 $callback($this);

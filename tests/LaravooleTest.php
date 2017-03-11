@@ -22,6 +22,7 @@ class LaravooleTest extends TestCase
             'port' => 9051,
             'daemonize' => false,
             'worker_num' => 1,
+            'max_request' => 2000,
         ],
         'SwooleWebsocket' => [
             'port' => 9052,
@@ -59,7 +60,7 @@ class LaravooleTest extends TestCase
      */
     public function testSwooleHttp()
     {
-        $this->assertRequests('http', function ($uri) {
+        $this->assertRequests('SwooleHttp', 'http', function ($uri) {
             return $this->requestHttp('http://localhost:9050' . $uri);
         });
     }
@@ -84,7 +85,7 @@ class LaravooleTest extends TestCase
     {
         // $this->assertRegExp('~Laravel~', $this->requestFastCgi('http://localhost:9051/'));
 
-        $this->assertRequests('raw', function ($uri) {
+        $this->assertRequests('SwooleFastCGI', 'raw', function ($uri) {
             return $this->requestFastCgi('http://localhost:9051' . $uri);
         });
     }
@@ -121,7 +122,7 @@ class LaravooleTest extends TestCase
                 'error' => null,
             ]));
         }
-        $this->assertRequests('http', function ($uri) {
+        $this->assertRequests('SwooleWebsocket', 'http', function ($uri) {
             return $this->requestHttp('http://localhost:9052' . $uri);
         });
     }
@@ -145,7 +146,7 @@ class LaravooleTest extends TestCase
     public function testWorkermanFastCgi($client)
     {
         // sleep(30);
-        $this->assertRequests('raw', function ($uri) {
+        $this->assertRequests('WorkermanFastCGI', 'raw', function ($uri) {
             return $this->requestFastCgi('http://localhost:9053' . $uri);
         });
     }
@@ -174,11 +175,14 @@ class LaravooleTest extends TestCase
         }
     }
 
-    protected function assertRequests($resultType, $callback)
+    protected function assertRequests($mode, $resultType, $callback)
     {
         $this->assertRegExp('~Laravel~', $callback('/'));
         $this->assertStringEndsWith('Laravoole', $callback('/laravoole'));
         $this->assertRegExp('~Laravel - A PHP Framework For Web Artisans~', $callback('/download'));
+        if(isset($this->handlers[$mode]['deal_with_public']) && $this->handlers[$mode]['deal_with_public']) {
+            $this->assertStringStartsWith('User-agent', $callback('/robots.txt'));
+        }
         if (self::$codeCoveraging) {
             $result = $callback('/codeCoverage');
             if ($resultType == 'raw') {
