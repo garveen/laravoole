@@ -28,6 +28,7 @@ abstract class Swoole extends Base
             'daemonize' => 1,
             'backlog',
             'log_file' => [self::class, 'getLogFile'],
+            'log_level',
             'heartbeat_check_interval',
             'heartbeat_idle_time',
             'open_eof_check',
