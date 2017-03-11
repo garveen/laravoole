@@ -77,6 +77,8 @@ abstract class Base
 
         $this->kernel->bootstrap();
         chdir(public_path());
+        $this->events = $this->app['events'];
+        $this->events->fire('laravoole.bootstraped', [$this->app, $this->kernel]);
     }
 
     public function onRequest($request, $response)
@@ -106,7 +108,7 @@ abstract class Base
                 }
             }
 
-            $this->app['events']->fire('laravoole.requesting', [$illuminate_request]);
+            $this->events->fire('laravoole.requesting', [$illuminate_request]);
 
             $illuminate_response = $kernel->handle($illuminate_request);
 
@@ -129,7 +131,7 @@ abstract class Base
             if (isset($illuminate_response)) {
                 $kernel->terminate($illuminate_request, $illuminate_response);
             }
-            $this->app['events']->fire('laravoole.requested', [$illuminate_request, $illuminate_response]);
+            $this->events->fire('laravoole.requested', [$illuminate_request, $illuminate_response]);
 
             $this->clean($illuminate_request);
 
@@ -190,8 +192,8 @@ abstract class Base
 
     public function endResponse($response, $content)
     {
-        if (is_string($content)) {
-            $response->sendfile($content);
+        if (!is_string($content)) {
+            $response->sendfile($content());
         } else {
             // send content & close
             $response->end($content);

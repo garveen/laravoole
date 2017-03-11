@@ -217,7 +217,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             return;
         }
         $request = $this->connections[$fd]['request'];
-        $this->app['events']->fire('laravoole.swoole.websocket.closing', [$request, $fd]);
+        $this->events->fire('laravoole.swoole.websocket.closing', [$request, $fd]);
 
         unset($this->unfinished[$fd]);
         unset($this->connections[$fd]);
