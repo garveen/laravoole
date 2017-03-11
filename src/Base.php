@@ -78,7 +78,6 @@ abstract class Base
         $this->kernel->bootstrap();
         chdir(public_path());
         $this->events = $this->app['events'];
-        $this->events->fire('laravoole.bootstraped', [$this->app, $this->kernel]);
     }
 
     public function onRequest($request, $response)
