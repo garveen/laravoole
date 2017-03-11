@@ -150,7 +150,7 @@ class LaravooleCommand extends Command
             'wrapper' => $wrapper,
             'pid_file' => config('laravoole.base_config.pid_file'),
             'root_dir' => base_path(),
-            'base_config' => config('laravoole.base_config'),
+            'callbacks' => config('laravoole.base_config.callbacks'),
             // for swoole / workerman
             'handler_config' => $handler_config,
             // for wrapper, like http / fastcgi / websocket

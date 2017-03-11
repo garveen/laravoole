@@ -23,11 +23,11 @@ abstract class Base
 
     protected $pid_file;
 
-    protected $base_config;
+    public $base_config;
 
-    protected $handler_config;
+    public $handler_config;
 
-    protected $wrapper_config;
+    public $wrapper_config;
 
     protected $kernel;
 
@@ -65,10 +65,14 @@ abstract class Base
         } else {
             require $this->root_dir . '/bootstrap/autoload.php';
         }
+        if (isset($this->base_config['callbacks']['bootstraping'])) {
+            foreach ($this->base_config['callbacks']['bootstraping'] as $callback) {
+                $callback($this);
+            }
+        }
         $this->app = $this->createApp();
 
         if (isset($this->wrapper_config['environment_path'])) {
-            var_dump($this->wrapper_config['environment_path']);
             $this->app->useEnvironmentPath($this->wrapper_config['environment_path']);
         }
 
@@ -82,8 +86,10 @@ abstract class Base
 
         $this->kernel->bootstrap();
         chdir(public_path());
-        foreach($this->base_config['callbacks']['bootstraped'] as $callback) {
-            $callback($this);
+        if (isset($this->base_config['callbacks']['bootstraped'])) {
+            foreach ($this->base_config['callbacks']['bootstraped'] as $callback) {
+                $callback($this);
+            }
         }
         $this->events = $this->app['events'];
     }

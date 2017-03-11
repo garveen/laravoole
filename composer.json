@@ -30,7 +30,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Laravoole\\": "src/"
+            "Laravoole\\": "src/",
+            "Laravoole\\Test\\": "tests/"
         }
     }
 }

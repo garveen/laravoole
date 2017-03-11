@@ -1,4 +1,6 @@
 <?php
+namespace Laravoole;
+
 return [
     // for laravoole itself
     'base_config' => [
@@ -34,18 +36,26 @@ return [
 
         // response header server
         'server' => env('LARAVOOLE_SERVER', 'Laravoole'),
+
+        'callbacks' => [
+            // Can NOT use Closure here, because they can't be seralized
+            'bootstraped' => [],
+        ],
     ],
+
     // for swoole / workerman
     'handler_config' => [
         'max_request' => env('LARAVOOLE_MAX_REQUEST', 2000),
         'daemonize' => env('LARAVOOLE_DAEMONIZE', 1),
     ],
+
+    // for wrapper, like http / fastcgi / websocket
     'wrapper_config' => [
         // websocket default protocol
         'websocket_default_protocol' => env('LARAVOOLE_WEBSOCKET_DEFAULT_PROTOCOL', 'jsonrpc'),
 
         'websocket_protocols' => [
-            'jsonrpc' => Laravoole\WebsocketCodec\JsonRpc::class,
+            'jsonrpc' => \Laravoole\WebsocketCodec\JsonRpc::class,
         ],
 
         // Uncomment below if you want to use your own task callbacks
