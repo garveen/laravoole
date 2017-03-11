@@ -23,7 +23,11 @@ abstract class Base
 
     protected $pid_file;
 
+    protected $base_config;
+
     protected $handler_config;
+
+    protected $wrapper_config;
 
     protected $kernel;
 
@@ -40,12 +44,13 @@ abstract class Base
         throw new Exception(__CLASS__ . "::start MUST be implemented", 1);
     }
 
-    final public function init($pid_file, $root_dir, $handler_config, $wrapper_config)
+    final public function init(array $configs)
     {
-        $this->pid_file = $pid_file;
-        $this->root_dir = $root_dir;
-        $this->handler_config = $handler_config;
-        $this->wrapper_config = $wrapper_config;
+        $this->pid_file = $configs['pid_file'];
+        $this->root_dir = $configs['root_dir'];
+        $this->base_config = $configs['base_config'];
+        $this->handler_config = $configs['handler_config'];
+        $this->wrapper_config = $configs['wrapper_config'];
     }
 
     public function prepareKernel()
@@ -60,7 +65,7 @@ abstract class Base
         } else {
             require $this->root_dir . '/bootstrap/autoload.php';
         }
-        $this->app = $this->getApp();
+        $this->app = $this->createApp();
 
         if (isset($this->wrapper_config['environment_path'])) {
             var_dump($this->wrapper_config['environment_path']);
@@ -68,7 +73,7 @@ abstract class Base
         }
 
         $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
-        $virus = function() {
+        $virus = function () {
             // Insert bofore BootProviders
             array_splice($this->bootstrappers, -1, 0, [\Illuminate\Foundation\Bootstrap\SetRequestForConsole::class]);
         };
@@ -77,6 +82,9 @@ abstract class Base
 
         $this->kernel->bootstrap();
         chdir(public_path());
+        foreach($this->base_config['callbacks']['bootstraped'] as $callback) {
+            $callback($this);
+        }
         $this->events = $this->app['events'];
     }
 
@@ -118,7 +126,6 @@ abstract class Base
             }
 
             ob_end_clean();
-
 
         } catch (\Exception $e) {
             echo '[ERR] ' . $e->getFile() . '(' . $e->getLine() . '): ' . $e->getMessage() . PHP_EOL;
@@ -192,14 +199,22 @@ abstract class Base
     public function endResponse($response, $content)
     {
         if (!is_string($content)) {
-            $response->sendfile($content());
+            $response->sendfile(realpath($content()));
         } else {
             // send content & close
             $response->end($content);
         }
     }
 
-    protected function getApp()
+    public function getApp()
+    {
+        if (!$this->app) {
+            $this->app = $this->createApp();
+        }
+        return $this->app;
+    }
+
+    protected function createApp()
     {
         $app = new Application($this->root_dir);
         $rootNamespace = $app->getNamespace();

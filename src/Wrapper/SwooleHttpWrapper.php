@@ -3,6 +3,8 @@ namespace Laravoole\Wrapper;
 
 use swoole_http_server;
 
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
 class SwooleHttpWrapper extends Swoole implements ServerInterface
 {
     protected $accept_gzip = false;
@@ -104,8 +106,8 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
                     $response->gzip(config('laravoole.base_config.gzip'));
                 }
             }
-            $this->endResponse($response, $content);
         }
+        $this->endResponse($response, $content);
     }
 
 

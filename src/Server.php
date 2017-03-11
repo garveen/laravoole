@@ -10,6 +10,8 @@ class Server
 {
     protected $wrapper;
 
+    protected $startingCallbacks = [];
+
     public function __construct($wrapper, $wrapper_file = '')
     {
         if (!class_exists($wrapper)) {
@@ -28,11 +30,11 @@ class Server
         return $this->wrapper;
     }
 
-    public function start($host, $port, $pid_file, $root_dir, $handler_config, $wrapper_config)
+    public function start($configs)
     {
         require __DIR__ . '/Mime.php';
-        $wrapper = new $this->wrapper($host, $port);
-        $wrapper->init($pid_file, $root_dir, $handler_config, $wrapper_config);
+        $wrapper = new $this->wrapper($configs['host'], $configs['port']);
+        $wrapper->init($configs);
         $wrapper->start();
     }
 

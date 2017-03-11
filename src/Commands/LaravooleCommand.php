@@ -150,13 +150,14 @@ class LaravooleCommand extends Command
             'wrapper' => $wrapper,
             'pid_file' => config('laravoole.base_config.pid_file'),
             'root_dir' => base_path(),
+            'base_config' => config('laravoole.base_config'),
             // for swoole / workerman
             'handler_config' => $handler_config,
             // for wrapper, like http / fastcgi / websocket
             'wrapper_config' => config('laravoole.wrapper_config'),
         ];
 
-        $handle = popen('/usr/bin/env php ' . __DIR__ . '/../../src/Entry.php', 'w');
+        $handle = popen(PHP_BINARY . ' ' . __DIR__ . '/../../src/Entry.php', 'w');
         fwrite($handle, serialize($configs));
         fclose($handle);
     }
