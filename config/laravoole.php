@@ -38,8 +38,12 @@ return [
         'server' => env('LARAVOOLE_SERVER', 'Laravoole'),
 
         'callbacks' => [
-            // Can NOT use Closure here, because they can't be seralized
-            'bootstraped' => [],
+            // MUST be static methods in array format like ['classname', 'method']
+            'bootstraping' => [
+                // ['foo', 'bar'],
+            ],
+            'bootstraped' => [
+            ],
         ],
     ],
 
