@@ -238,19 +238,15 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
         if (is_object($codeCoverage = $this->getTestResultObject()->getCodeCoverage())) {
             self::$codeCoveraging = true;
             $virus = function () {
-                return [
-                    'driver' => $this->driver,
-                    'check' => $this->shouldCheckForDeadAndUnused,
-                ];
+                    return $this->driver;
             };
             $virus = \Closure::bind($virus, $codeCoverage, $codeCoverage);
-            extract($virus());
+            $driver = $virus();
             if ($driver instanceof \SebastianBergmann\CodeCoverage\Driver\Xdebug) {
                 $entry = 'XdebugEntry.php';
             } else {
                 $entry = 'PHPDBGEntry.php';
             }
-            $entry .= $check ? ' true' : ' false';
             $config['base_config']['code_coverage'] = get_class($driver);
             $config['base_config']['callbacks']['bootstraping'][] = [Callbacks::class, 'bootstrapingCallback'];
         }
