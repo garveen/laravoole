@@ -9,4 +9,4 @@ before_script:
   - pecl install swoole
   - composer install --dev
 
-script: vendor/bin/phpunit
+script: phpunit --coverage-text --coverage-clover clover.xml
