@@ -242,7 +242,7 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
             };
             $virus = \Closure::bind($virus, $codeCoverage, $codeCoverage);
             $driver = $virus();
-            if ($driver instanceof \SebastianBergmann\CodeCoverage\Driver\Xdebug) {
+            if ($driver instanceof \SebastianBergmann\CodeCoverage\Driver\Xdebug || $driver instanceof \PHP_CodeCoverage_Driver_Xdebug) {
                 $entry = 'XdebugEntry.php';
             } else {
                 $entry = 'PHPDBGEntry.php';
