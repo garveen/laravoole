@@ -4,6 +4,12 @@ Laravel on Swoole Or Workerman
 
 10x faster than php-fpm
 
+[![Latest Stable Version](https://poser.pugx.org/garveen/laravoole/v/stable)](https://packagist.org/packages/garveen/laravoole)
+[![Total Downloads](https://poser.pugx.org/garveen/laravoole/downloads)](https://packagist.org/packages/garveen/laravoole)
+[![Latest Unstable Version](https://poser.pugx.org/garveen/laravoole/v/unstable)](https://packagist.org/packages/garveen/laravoole)
+[![License](https://poser.pugx.org/garveen/laravoole/license)](https://packagist.org/packages/garveen/laravoole)
+[![Build Status](https://travis-ci.org/garveen/laravoole.svg?branch=master)](https://travis-ci.org/garveen/laravoole)
+
 ##Depends On
 
 <table>
