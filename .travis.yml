@@ -7,6 +7,6 @@ php:
 
 before_script:
   - pecl install swoole
-  - composer install
+  - composer install --dev
 
 script: vendor/bin/phpunit
