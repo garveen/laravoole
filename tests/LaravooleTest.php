@@ -1,12 +1,10 @@
 <?php
 namespace Laravoole\Test;
 
-use PHPUnit\Framework\TestCase;
-
 use Adoy\FastCGI\Client as FastCgiClient;
 use WebSocket\Client as WebSocketClient;
 
-class LaravooleTest extends TestCase
+class LaravooleTest extends \PHPUnit_Framework_TestCase
 {
     protected static $codeCoveraging = false;
 
