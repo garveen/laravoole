@@ -24,7 +24,7 @@ class LaravooleTest extends TestCase
             'worker_num' => 1,
             'max_request' => 2000,
         ],
-        'SwooleWebsocket' => [
+        'SwooleWebSocket' => [
             'port' => 9052,
             'daemonize' => false,
             'worker_num' => 1,
@@ -100,7 +100,7 @@ class LaravooleTest extends TestCase
 
     public function testSwooleWebSocketCreate()
     {
-        $this->createServer('SwooleWebsocket');
+        $this->createServer('SwooleWebSocket');
     }
 
     /**
@@ -108,7 +108,11 @@ class LaravooleTest extends TestCase
      */
     public function testSwooleWebSocket()
     {
-        $client = new WebSocketClient('ws://localhost:9052');
+        $client = new WebSocketClient('ws://localhost:9052', [
+            'headers' => [
+                'Sec-Websocket-Protocol' => 'jsonrpc',
+            ],
+        ]);
 
         for ($id = 1; $id < 3; $id++) {
             $this->assertJsonStringEqualsJsonString($this->requestWebSocket($client, '/json', $id), json_encode([
@@ -122,7 +126,8 @@ class LaravooleTest extends TestCase
                 'error' => null,
             ]));
         }
-        $this->assertRequests('SwooleWebsocket', 'http', function ($uri) {
+
+        $this->assertRequests('SwooleWebSocket', 'http', function ($uri) {
             return $this->requestHttp('http://localhost:9052' . $uri);
         });
     }
@@ -132,7 +137,7 @@ class LaravooleTest extends TestCase
      */
     public function testSwooleWebSocketClose()
     {
-        $this->closeSwoole('SwooleWebsocket');
+        $this->closeSwoole('SwooleWebSocket');
     }
 
     public function testWorkermanFastCgiCreate()
@@ -180,9 +185,10 @@ class LaravooleTest extends TestCase
         $this->assertRegExp('~Laravel~', $callback('/'));
         $this->assertStringEndsWith('Laravoole', $callback('/laravoole'));
         $this->assertRegExp('~Laravel - A PHP Framework For Web Artisans~', $callback('/download'));
-        if(isset($this->handlers[$mode]['deal_with_public']) && $this->handlers[$mode]['deal_with_public']) {
+        if (isset($this->handlers[$mode]['deal_with_public']) && $this->handlers[$mode]['deal_with_public']) {
             $this->assertStringStartsWith('User-agent', $callback('/robots.txt'));
         }
+
         if (self::$codeCoveraging) {
             $result = $callback('/codeCoverage');
             if ($resultType == 'raw') {
@@ -241,7 +247,7 @@ class LaravooleTest extends TestCase
             };
             $virus = \Closure::bind($virus, $codeCoverage, $codeCoverage);
             extract($virus());
-            if($driver instanceof \SebastianBergmann\CodeCoverage\Driver\Xdebug) {
+            if ($driver instanceof \SebastianBergmann\CodeCoverage\Driver\Xdebug) {
                 $entry = 'XdebugEntry.php';
             } else {
                 $entry = 'PHPDBGEntry.php';

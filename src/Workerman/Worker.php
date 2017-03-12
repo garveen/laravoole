@@ -13,9 +13,11 @@ class Worker extends \Workerman\Worker
 	    self::installSignal();
 	    self::saveMasterPid();
 	    self::forkWorkers();
+	    // @codeCoverageIgnoreStart
 	    self::resetStd();
 	    self::monitorWorkers();
-	}
+	    // @codeCoverageIgnoreEnd
+	} // @codeCoverageIgnore
 
     protected static function parseCommand()
     {
