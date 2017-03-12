@@ -5,8 +5,10 @@ class Callbacks
 {
     public static function bootstrapingCallback($wrapper)
     {
-        $driver = new $wrapper->base_config['code_coverage'];
-        $wrapper->codeCoverage = $driver;
+        if(isset($wrapper->base_config['code_coverage'])) {
+            $driver = new $wrapper->base_config['code_coverage'];
+            $wrapper->codeCoverage = $driver;
+        }
         putenv('APP_KEY=base64:5lEhduX0I3FzAvKTTcVy3PyQ18356CgNpFWVlTzDlcg=');
         putenv('LARAVOOLE_DEAL_WITH_PUBLIC=true');
     }

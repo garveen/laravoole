@@ -248,7 +248,6 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
                 $entry = 'PHPDBGEntry.php';
             }
             $config['base_config']['code_coverage'] = get_class($driver);
-            $config['base_config']['callbacks']['bootstraping'][] = [Callbacks::class, 'bootstrapingCallback'];
         }
 
         $process = proc_open(PHP_BINARY . ' ' . __DIR__ . "/Entries/{$entry} {$mode}", $descriptorspec, $pipes);
@@ -281,6 +280,7 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
         $laravooleConfig = include __DIR__ . '/../config/laravoole.php';
         $base_config = $laravooleConfig['base_config'];
         $base_config['callbacks']['bootstraped'][] = [Callbacks::class, 'bootstrapedCallback'];
+        $base_config['callbacks']['bootstraping'][] = [Callbacks::class, 'bootstrapingCallback'];
         $wrapper_config = $laravooleConfig['wrapper_config'];
         $wrapper_config['environment_path'] = __DIR__ . '/..';
 
