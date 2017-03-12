@@ -23,7 +23,7 @@
         "textalk/websocket": "^1.2",
         "adoy/fastcgi-client": "^1.0",
         "laravel/laravel": "~5.1",
-        "phpunit/phpunit": ">4.8"
+        "phpunit/phpunit": ">4.8 <6.0"
     },
     "suggest": {
         "ext-swoole": "event-based extension for best performance",
