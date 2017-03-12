@@ -23,6 +23,7 @@
             <exclude>
                 <file>src/Entry.php</file>
                 <file>src/Commands/LaravooleCommand.php</file>
+                <file>src/Commands/LaravooleBroadcaster.php</file>
             </exclude>
         </whitelist>
     </filter>
