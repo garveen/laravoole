@@ -28,8 +28,8 @@ class SwooleFastCGIWrapper extends Swoole implements ServerInterface
             'Receive' => [$this, 'onReceive'],
         ], $this->callbacks);
 
-        parent::start();
-    } // @codeCoverageIgnore
+        return parent::start();
+    }
 
     public function onReceive($serv, $fd, $from_id, $data)
     {

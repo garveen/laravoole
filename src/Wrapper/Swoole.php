@@ -68,7 +68,7 @@ abstract class Swoole extends Base
         foreach ($callbacks as $on => $method) {
             $this->server->on($on, $method);
         }
-        $this->server->start();
+        return $this->server->start();
     }
 
     /**

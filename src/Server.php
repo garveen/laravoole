@@ -35,7 +35,7 @@ class Server
         require __DIR__ . '/Mime.php';
         $wrapper = new $this->wrapper($configs['host'], $configs['port']);
         $wrapper->init($configs);
-        $wrapper->start();
+        return $wrapper->start();
     }
 
 }
