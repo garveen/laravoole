@@ -261,7 +261,7 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
 
         // ensure server begin
         sleep(1);
-        ini_set('default_socket_timeout', 1);
+        ini_set('default_socket_timeout', 5);
     }
 
     protected function getPidFilePath($mode)
