@@ -6,6 +6,8 @@ use WebSocket\Client as WebSocketClient;
 
 class LaravooleTest extends \PHPUnit_Framework_TestCase
 {
+    protected $timeout = 5;
+
     protected static $codeCoveraging = false;
 
     protected $handlers = [
@@ -29,6 +31,10 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
         ],
         'WorkermanFastCGI' => [
             'port' => 9053,
+            'daemonize' => true,
+        ],
+        'WorkermanHttp' => [
+            'port' => 9054,
             'daemonize' => true,
         ],
     ];
@@ -148,7 +154,6 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
      */
     public function testWorkermanFastCgi($client)
     {
-        // sleep(30);
         $this->assertRequests('WorkermanFastCGI', 'raw', function ($uri) {
             return $this->requestFastCgi('http://localhost:9053' . $uri);
         });
@@ -160,6 +165,29 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
     public function testWorkermanFastCgiClose()
     {
         $this->closeWorkerman('WorkermanFastCGI');
+    }
+
+    public function testWorkermanHttpCreate()
+    {
+        $this->createServer('WorkermanHttp');
+    }
+
+    /**
+     * @depends testWorkermanHttpCreate
+     */
+    public function testWorkermanHttp()
+    {
+        $this->assertRequests('WorkermanHttp', 'http', function ($uri) {
+            return $this->requestHttp('http://localhost:9054' . $uri);
+        });
+    }
+
+    /**
+     * @depends testWorkermanHttpCreate
+     */
+    public function testWorkermanHttpClose()
+    {
+        $this->closeWorkerman('WorkermanHttp');
     }
 
     protected function closeSwoole($mode)
@@ -197,9 +225,30 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    protected function requestHttp($url)
+    protected function requestHttp($url, $withHeader = false)
     {
-        return file_get_contents($url);
+        $ch = curl_init($url);
+
+        curl_setopt($ch, CURLOPT_FAILONERROR, true);
+        curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
+        if ($withHeader) {
+            $header = [];
+            curl_setopt($ch, CURLOPT_HEADERFUNCTION, function ($c, $str) use (&$header) {
+                if (preg_match('~(.*?):(.*)~', trim($str), $matches)) {
+                    $header[trim($matches[1])] = trim($matches[2]);
+                }
+                return strlen($str);
+            });
+        }
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
+
+        $ret = curl_exec($ch);
+        curl_close($ch);
+        if ($withHeader) {
+            return ['header' => $header, 'body' => $ret];
+        }
+        return $ret;
     }
 
     protected function requestFastCgi($url)
@@ -238,7 +287,7 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
         if (is_object($codeCoverage = $this->getTestResultObject()->getCodeCoverage())) {
             self::$codeCoveraging = true;
             $virus = function () {
-                    return $this->driver;
+                return $this->driver;
             };
             $virus = \Closure::bind($virus, $codeCoverage, $codeCoverage);
             $driver = $virus();
@@ -261,7 +310,7 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
 
         // ensure server begin
         sleep(1);
-        ini_set('default_socket_timeout', 5);
+        ini_set('default_socket_timeout', $this->timeout);
     }
 
     protected function getPidFilePath($mode)
@@ -281,6 +330,8 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
         $base_config = $laravooleConfig['base_config'];
         $base_config['callbacks']['bootstraped'][] = [Callbacks::class, 'bootstrapedCallback'];
         $base_config['callbacks']['bootstraping'][] = [Callbacks::class, 'bootstrapingCallback'];
+        $base_config['gzip_min_length'] = 1;
+        $base_config['deal_with_public'] = true;
         $wrapper_config = $laravooleConfig['wrapper_config'];
         $wrapper_config['environment_path'] = __DIR__ . '/..';
 

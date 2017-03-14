@@ -185,7 +185,7 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
             ]);
         }
         $illuminateResponse = parent::handleRequest($illuminateRequest);
-        $this->handleResponse($request, $response, $illuminateResponse);
+        $this->handleResponse($response, $illuminateResponse, '');
 
         $request->laravooleInfo = $illuminateRequest->getLaravooleInfo();
     }

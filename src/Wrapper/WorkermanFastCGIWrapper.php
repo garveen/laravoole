@@ -6,15 +6,16 @@ use Garveen\FastCgi\FastCgi;
 
 class WorkermanFastCGIWrapper extends Workerman implements ServerInterface
 {
-
     public function __construct($host, $port)
     {
-        if (file_exists(__DIR__ . '/../../vendor/workerman/workerman/Autoloader.php')) {
-            require __DIR__ . '/../../vendor/workerman/workerman/Autoloader.php';
-        } else {
-            require __DIR__ . '/../../../../workerman/workerman/Autoloader.php'; // @codeCoverageIgnore
-        }
+        parent::__construct($host, $port);
         $this->server = new Worker("tcp://{$host}:{$port}");
+    }
+
+    public function start()
+    {
+        $this->on('Receive', [$this, 'onReceive']);
+        return parent::start();
     }
 
     public function onWorkerStart($worker)

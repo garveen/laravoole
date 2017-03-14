@@ -9,8 +9,6 @@ use Exception;
 abstract class Swoole extends Base
 {
 
-    protected $callbacks = [];
-
     // http://wiki.swoole.com/wiki/page/274.html
     public static function getParams()
     {

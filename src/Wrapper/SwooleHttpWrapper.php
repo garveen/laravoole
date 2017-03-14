@@ -7,13 +7,12 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SwooleHttpWrapper extends Swoole implements ServerInterface
 {
-    protected $accept_gzip = false;
+    use HttpTrait;
 
     public function __construct($host, $port)
     {
         $this->server = new swoole_http_server($host, $port);
     }
-
 
     public function start()
     {
@@ -35,7 +34,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
     public function onRequest($request, $response)
     {
         // convert request
-        $request = $this->ucHeaders($request);
+        $this->ucHeaders($request);
         if (config('laravoole.base_config.deal_with_public')) {
             if ($status = $this->handleStaticFile($request, $response)) {
                 return $status;
@@ -43,7 +42,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         }
         // provide response callback
         $illuminateResponse = parent::handleRequest($request);
-        return $this->handleResponse($request, $response, $illuminateResponse);
+        return $this->handleResponse($response, $illuminateResponse, isset($request->header['Accept-Encoding']) ? $request->header['Accept-Encoding'] : '');
     }
 
     protected function ucHeaders($request)
@@ -65,52 +64,6 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         return $request;
     }
 
-
-    protected function handleResponse($request, $response, $illuminateResponse)
-    {
-
-        $accept_gzip = $this->accept_gzip && isset($request->header['Accept-Encoding']) && stripos($request->header['Accept-Encoding'], 'gzip') !== false;
-
-        // status
-        $response->status($illuminateResponse->getStatusCode());
-        // headers
-        $response->header('Server', config('laravoole.base_config.server'));
-        foreach ($illuminateResponse->headers->allPreserveCase() as $name => $values) {
-            foreach ($values as $value) {
-                $response->header($name, $value);
-            }
-        }
-        // cookies
-        foreach ($illuminateResponse->headers->getCookies() as $cookie) {
-            $response->rawcookie(
-                $cookie->getName(),
-                urlencode($cookie->getValue()),
-                $cookie->getExpiresTime(),
-                $cookie->getPath(),
-                $cookie->getDomain(),
-                $cookie->isSecure(),
-                $cookie->isHttpOnly()
-            );
-        }
-        // content
-        if ($illuminateResponse instanceof BinaryFileResponse) {
-            $content = function() use ($illuminateResponse) {
-                return $illuminateResponse->getFile()->getPathname();
-            };
-        } else {
-            $content = $illuminateResponse->getContent();
-            // check gzip
-            if ($accept_gzip && isset($response->header['Content-Type'])) {
-                $mime = $response->header['Content-Type'];
-                if (strlen($content) > config('laravoole.base_config.gzip_min_length') && is_mime_gzip($mime)) {
-                    $response->gzip(config('laravoole.base_config.gzip'));
-                }
-            }
-        }
-        $this->endResponse($response, $content);
-    }
-
-
     protected function handleStaticFile($request, $response)
     {
         static $public_path;
@@ -119,6 +72,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
             $public_path = $app->make('path.public');
 
         }
+
         $uri = $request->server['REQUEST_URI'];
         $file = realpath($public_path . $uri);
         if (is_file($file)) {
@@ -137,6 +91,16 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         }
         return false;
 
+    }
+
+    public function endResponse($response, $content)
+    {
+        if (!is_string($content)) {
+            $response->sendfile(realpath($content()));
+        } else {
+            // send content & close
+            $response->end($content);
+        }
     }
 
 }

@@ -40,6 +40,12 @@ abstract class Base
     protected $diactorosFactory;
 
     /**
+     * For wrappers' events.
+     * @var array
+     */
+    protected $callbacks = [];
+
+    /**
      * Start the server
      * @codeCoverageIgnore
      */
@@ -90,6 +96,8 @@ abstract class Base
 
         $this->kernel->bootstrap();
         chdir(public_path());
+        $config = $this->app['config']->get('laravoole.base_config', []);
+        $this->app['config']->set('laravoole.base_config', array_merge($config, $this->base_config));
 
         if (isset($this->base_config['callbacks']['bootstraped'])) {
             foreach ($this->base_config['callbacks']['bootstraped'] as $callback) {
@@ -97,18 +105,6 @@ abstract class Base
             }
         }
         $this->events = $this->app['events'];
-    }
-
-    /**
-     * handle the request
-     * @codeCoverageIgnore
-     * @param  swoole_http_request $request
-     * @param  swoole_http_response $response
-     */
-    public function onRequest($request, $response)
-    {
-        throw new Exception("not implemented", 1);
-
     }
 
     public function handleRequest($request, IlluminateRequest $illuminate_request = null)
@@ -210,16 +206,6 @@ abstract class Base
         if ($this->app->isProviderLoaded(\Illuminate\Auth\AuthServiceProvider::class)) {
             $this->app->register(\Illuminate\Auth\AuthServiceProvider::class, [], true);
             Facade::clearResolvedInstance('auth');
-        }
-    }
-
-    public function endResponse($response, $content)
-    {
-        if (!is_string($content)) {
-            $response->sendfile(realpath($content()));
-        } else {
-            // send content & close
-            $response->end($content);
         }
     }
 
