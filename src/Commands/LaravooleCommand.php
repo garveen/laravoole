@@ -130,10 +130,6 @@ class LaravooleCommand extends Command
 
         }
 
-        if (!strcasecmp('SwooleFastCGI', $mode)) {
-            $handler_config['dispatch_mode'] = 2;
-        }
-
         $host = config('laravoole.base_config.host');
         $port = config('laravoole.base_config.port');
         $socket = @stream_socket_server("tcp://{$host}:{$port}");
