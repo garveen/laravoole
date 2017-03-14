@@ -155,6 +155,7 @@ class LaravooleCommand extends Command
             'handler_config' => $handler_config,
             // for wrapper, like http / fastcgi / websocket
             'wrapper_config' => config('laravoole.wrapper_config'),
+            'base_config' => config('laravoole.base_config'),
         ];
 
         $handle = popen(PHP_BINARY . ' ' . __DIR__ . '/../../src/Entry.php', 'w');
