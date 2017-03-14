@@ -1,6 +1,8 @@
 <?php
 namespace Laravoole\Test;
 
+use Illuminate\Http\Request;
+
 class Callbacks
 {
     public static function bootstrapingCallback($wrapper)
@@ -32,6 +34,11 @@ class Callbacks
                 'object' => ['property' => 'value'],
                 'array' => ['foo', 'bar'],
             ];
+        });
+
+        $route->get('/forcenext', function(Request $request) {
+            $request->forceNextMessageRoute('/laravoole', []);
+            return 'forcenext';
         });
 
         $route->get('/codeCoverage', function() use ($wrapper) {

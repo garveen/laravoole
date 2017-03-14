@@ -116,10 +116,11 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
             'headers' => [
                 'Sec-Websocket-Protocol' => 'jsonrpc',
             ],
+            'timeout' => $this->timeout,
         ]);
 
         for ($id = 1; $id < 3; $id++) {
-            $this->assertJsonStringEqualsJsonString($this->requestWebSocket($client, '/json', $id), json_encode([
+            $this->assertJsonStringEqualsJsonString($this->requestWebSocket($client, '/json', [], $id), json_encode([
                 'status' => 200,
                 'method' => '/json',
                 'result' => json_encode([
@@ -130,6 +131,9 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
                 'error' => null,
             ]));
         }
+        $this->assertEquals('forcenext', json_decode($this->requestWebSocket($client, '/forcenext', [], $id++))->result);
+        $this->assertEquals('Laravoole', json_decode($this->requestWebSocket($client, '/not_routed', [], $id++))->result);
+        $this->assertEquals(404, json_decode($this->requestWebSocket($client, '/not_routed', [], $id++))->status);
 
         $this->assertRequests('SwooleWebSocket', 'http', function ($uri) {
             return $this->requestHttp('http://localhost:9052' . $uri);
@@ -262,14 +266,18 @@ class LaravooleTest extends \PHPUnit_Framework_TestCase
         return $result;
     }
 
-    protected function requestWebSocket($client, $uri, $id)
+    protected function requestWebSocket($client, $uri, $params, $id)
     {
-        $client->send(json_encode([
+        return $this->requestRawWebSocket($client, json_encode([
             'method' => $uri,
-            'params' => [],
+            'params' => $params,
             'id' => $id,
         ]));
+    }
 
+    protected function requestRawWebSocket($client, $data)
+    {
+        $client->send($data);
         return $client->receive();
     }
 
