@@ -9,4 +9,7 @@ before_script:
   - pecl install swoole
   - composer install --dev
 
-script: vendor/phpunit/phpunit/phpunit --coverage-text --coverage-clover clover.xml
+script: vendor/phpunit/phpunit/phpunit --coverage-text --coverage-clover coverage.xml
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
