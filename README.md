@@ -9,6 +9,7 @@ Laravel on Swoole Or Workerman
 [![Latest Unstable Version](https://poser.pugx.org/garveen/laravoole/v/unstable)](https://packagist.org/packages/garveen/laravoole)
 [![License](https://poser.pugx.org/garveen/laravoole/license)](https://packagist.org/packages/garveen/laravoole)
 [![Build Status](https://travis-ci.org/garveen/laravoole.svg?branch=master)](https://travis-ci.org/garveen/laravoole)
+[![Code Coverage](https://scrutinizer-ci.com/g/garveen/laravoole/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/garveen/laravoole/?branch=master)
 
 ##Depends On
 
