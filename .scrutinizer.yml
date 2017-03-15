@@ -1,5 +1,5 @@
 tools:
-    # external_code_coverage: true
+    external_code_coverage: true
     php_mess_detector: true
     php_code_sniffer: true
     sensiolabs_security_checker: true
@@ -11,11 +11,3 @@ tools:
 filter:
     excluded_paths:
         - 'tests/*'
-build:
-    tests:
-        override:
-            -
-                command: phpunit --coverage-clover=my-coverage-file
-                coverage:
-                    file: my-coverage-file
-                    format: php-clover
