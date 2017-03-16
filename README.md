@@ -1,4 +1,4 @@
-#Laravoole
+# Laravoole
 
 Laravel on Swoole Or Workerman
 
@@ -11,7 +11,7 @@ Laravel on Swoole Or Workerman
 [![Build Status](https://travis-ci.org/garveen/laravoole.svg?branch=master)](https://travis-ci.org/garveen/laravoole)
 [![Code Coverage](https://scrutinizer-ci.com/g/garveen/laravoole/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/garveen/laravoole/?branch=master)
 
-##Depends On
+## Depends On
 
 <table>
 	<tr>
@@ -22,7 +22,7 @@ Laravel on Swoole Or Workerman
 	</tr>
 </table>
 
-##Suggests
+## Suggests
 
 <table>
 	<tr>
@@ -37,7 +37,7 @@ Laravel on Swoole Or Workerman
 </table>
 
 
-##Install
+## Install
 
 
 To get started, add laravoole to you composer.json file and run `composer update`:
@@ -63,15 +63,15 @@ Once composer done its job, you need to register Laravel service provider, in yo
 
 **Notice: You should NOT use file session handler, because it is not stable at this environement. Use redis or other handler instead.**
 
-##Usage
+## Usage
 
 ```shell
 php artisan laravoole [start | stop | reload | reload_task | restart | quit]
 ```
 
-##Migrations
+## Migrations
 
-###Upgrade to 0.4
+### Upgrade to 0.4
 
 Event names has changed:
 
@@ -79,7 +79,7 @@ Event names has changed:
 - `laravoole.on_requested` => `laravoole.requested`
 - `laravoole.swoole.websocket.on_close` => `laravoole.swoole.websocket.closing`
 
-##Config
+## Config
 
 To generate `config/laravoole.php`:
 
@@ -103,7 +103,7 @@ is equals with
 LARAVOOLE_HOST=0.0.0.0
 ```
 
-##Events
+## Events
 
 You can handle events by editing `EventServiceProvider`:
 
@@ -121,11 +121,11 @@ public function boot()
 - `laravoole.requested`(`Illuminate\Http\Request`, `Illuminate\Http\Response`)
 - `laravoole.swoole.websocket.closing`(`Laravoole\Request`, int `$fd`)
 
-##base_config
+## base_config
 
 This section configures laravoole itself.
 
-###mode
+### mode
 
 `SwooleHttp` uses swoole to response http requests
 
@@ -135,27 +135,27 @@ This section configures laravoole itself.
 
 `WorkermanFastCGI` uses workerman to response fastcgi requests (just like php-fpm)
 
-####user defined wrappers
+#### user defined wrappers
 
 You can make a new wrapper implements `Laravoole\Wrapper\ServerInterface`, and put its full class name to `mode`.
 
-###pid_file
+### pid_file
 
 Defines a file that will store the process ID of the main process.
 
-###deal\_with\_public
+### deal\_with\_public
 
 When using Http mode, you can turn on this option to let laravoole send static resources to clients. Use this ***ONLY*** when developing.
 
-###host and port
+### host and port
 
 Default `host` is `127.0.0.1`, and `port` is `9050`
 
-##handler_config
+## handler_config
 
 This section configures the backend, e.g. `swoole` or `workerman`.
 
-###Swoole
+### Swoole
 
 As an example, if want to set worker_num to 8, you can set `.env`:
 
@@ -178,7 +178,7 @@ See Swoole's document:
 
 [English](https://cdn.rawgit.com/tchiotludo/swoole-ide-helper/dd73ce0dd949870daebbf3e8fee64361858422a1/docs/classes/swoole_server.html#method_set)
 
-###Workerman
+### Workerman
 
 As an example, if want to set worker_num to 8, you can set `.env`:
 
@@ -201,9 +201,9 @@ See Workerman's document:
 
 [English](http://wiki.workerman.net/Workerman_documentation#Properties)
 
-##Websocket Usage
+## Websocket Usage
 
-###Subprotocols
+### Subprotocols
 
 See Mozilla's Document: [Writing WebSocket server](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#Subprotocols)
 
@@ -216,7 +216,7 @@ The default subprotocol is [jsonrpc](http://json-rpc.org/), but has some differe
 
 You can define your own subprotocol, by implements `Laravoole\WebsocketCodec\CodecInterface` and add to `config/laravoole.php`.
 
-###Client Example:
+### Client Example:
 
 ```html
 <!DOCTYPE html>
@@ -258,7 +258,7 @@ tr:nth-child(even){background-color: #eee}
 ```
 
 
-##Work with nginx
+## Work with nginx
 
 ```Nginx
 server {
@@ -306,5 +306,5 @@ server {
 }
 ```
 
-#License
+# License
 [MIT](LICENSE)
