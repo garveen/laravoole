@@ -184,6 +184,8 @@ class SwooleWebSocketWrapper extends SwooleHttpWrapper implements ServerInterfac
                 'codec' => $this->connections[$response->request->fd]['protocol'],
             ]);
         }
+        $illuminateRequest->headers->set('X-Requested-With', 'XMLHttpRequest');
+        $illuminateRequest->headers->set('Accept', 'Accept: text/html,application/xhtml+xml,application/xml,application/json');
         $illuminateResponse = parent::handleRequest($illuminateRequest);
         $this->handleResponse($response, $illuminateResponse, '');
 
