@@ -156,7 +156,7 @@ class LaravooleCommand extends Command
 
         $handle = popen(PHP_BINARY . ' ' . __DIR__ . '/../../src/Entry.php', 'w');
         fwrite($handle, serialize($configs));
-        fclose($handle);
+        pclose($handle);
     }
 
     protected function getPid()
