@@ -4,7 +4,8 @@ namespace Laravoole\Wrapper;
 interface ServerInterface
 {
     public static function getParams();
-    public static function getDefaults();
+
+    public function __construct($host, $port);
     /**
      * event callback
      * @param  string   $event    start receive shutdown WorkerStart close request
@@ -12,8 +13,14 @@ interface ServerInterface
      */
     public function on($event, callable $callback);
     public function start();
-    public function init($config, $settings);
     public function send($fd, $content);
     public function close($fd);
     public function getPid();
+
+    /**
+     * Normally you did not need to implement this method if your wrapper extends Laravoole\Base
+     * @param  array $configs
+     * @return null
+     */
+    public function init(array $configs);
 }

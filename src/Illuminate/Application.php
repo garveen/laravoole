@@ -1,7 +1,7 @@
 <?php
-namespace Laravoole;
+namespace Laravoole\Illuminate;
 
-class App extends \Illuminate\Foundation\Application
+class Application extends \Illuminate\Foundation\Application
 {
     public function isProviderLoaded($name)
     {

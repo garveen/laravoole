@@ -1,5 +1,5 @@
 {
-    "name": "acabin/laravoole",
+    "name": "garveen/laravoole",
     "description": "Get 10x performance for Laravel on Swoole or Workerman",
     "type": "library",
     "keywords": ["laravel","swoole","workerman"],
@@ -12,17 +12,27 @@
     ],
     "require": {
         "php": ">=5.5.16",
-        "laravel/framework": "5.1.* || 5.2.*",
-        "ext-posix": "*"
+        "ext-posix": "*",
+        "symfony/psr-http-message-bridge": "^1.0",
+        "garveen/fastcgi": "^0.1",
+        "zendframework/zend-diactoros": "^1.3",
+        "laravel/framework": "~5.1"
+    },
+    "require-dev": {
+        "workerman/workerman": "^3.3",
+        "textalk/websocket": "^1.2",
+        "adoy/fastcgi-client": "^1.0",
+        "laravel/laravel": "~5.1",
+        "phpunit/phpunit": ">4.8 <6.0"
     },
     "suggest": {
         "ext-swoole": "event-based extension for best performance",
         "workerman/workerman": "event-based library without need for any extension"
     },
-    "bin": ["laravoole"],
     "autoload": {
         "psr-4": {
-            "Laravoole\\": "src/"
+            "Laravoole\\": "src/",
+            "Laravoole\\Test\\": "tests/"
         }
     }
 }

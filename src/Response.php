@@ -8,7 +8,9 @@ class Response
 
     public $header;
     public $cookie;
-    public $body;
+    public $content = '';
+
+    public $isFastCgi = false;
 
     static $HTTP_HEADERS = array(
         100 => 'Continue',
@@ -74,10 +76,10 @@ class Response
     );
 
     protected $protocol;
-    protected $request;
+    public $request;
     protected $gzip_level = false;
 
-    public function __construct($protocol, $request)
+    public function __construct($protocol, $request, $isFastCgi = false)
     {
         $this->protocol = $protocol;
         $this->request = $request;
@@ -134,10 +136,10 @@ class Response
         $this->header = array_merge($this->header, $header);
     }
 
-    public function getHeader($fastcgi = false)
+    public function getHeader()
     {
         $out = '';
-        if ($fastcgi) {
+        if ($this->isFastCgi) {
             $status = isset(static::$HTTP_HEADERS[$this->http_status]) ? static::$HTTP_HEADERS[$this->http_status] : 'Undefined Status Code';
             $out .= 'Status: ' . $this->http_status . ' ' . $status . "\r\n";
         } else {
@@ -150,7 +152,7 @@ class Response
             }
         }
         if (!isset($this->header['Content-Length'])) {
-            $this->header['Content-Length'] = strlen($this->body);
+            $this->header['Content-Length'] = strlen($this->content);
         }
 
         //Headers
@@ -200,21 +202,20 @@ class Response
         $this->gzip_level = $level;
     }
 
-    public function end($content)
+    public function getRawContent($content = '')
     {
+        if($content) {
+            $this->content = $content;
+        } else {
+            $content = $this->content;
+        }
         if ($this->gzip_level) {
             $content = gzencode($content, $this->gzip_level);
             $this->header('Content-Encoding', 'gzip');
         }
         $this->header('Content-Length', strlen($content));
-        $out = $this->getHeader(true);
+        $out = $this->getHeader();
         $out .= $content;
-        $protocol = $this->protocol;
-        $protocol->response($this->request, $out);
-    }
-
-    public function sendfile($file)
-    {
-        $this->header['x-sendfile'] = $file;
+        return $out;
     }
 }

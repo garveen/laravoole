@@ -6,16 +6,16 @@ use swoole_http_server;
 use Laravoole\Base;
 use Exception;
 
-class Swoole extends Base implements ServerInterface
+abstract class Swoole extends Base
 {
 
     // http://wiki.swoole.com/wiki/page/274.html
     public static function getParams()
     {
-        return $params = [
+        return [
             'reactor_num',
             'worker_num',
-            'max_request',
+            'max_request' => 2000,
             'max_conn',
             'task_worker_num',
             'task_ipc_mode',
@@ -23,9 +23,10 @@ class Swoole extends Base implements ServerInterface
             'task_tmpdir',
             'dispatch_mode',
             'message_queue_key',
-            'daemonize',
+            'daemonize' => 1,
             'backlog',
-            'log_file',
+            'log_file' => [self::class, 'getLogFile'],
+            'log_level',
             'heartbeat_check_interval',
             'heartbeat_idle_time',
             'open_eof_check',
@@ -51,41 +52,50 @@ class Swoole extends Base implements ServerInterface
         ];
     }
 
-    public static function getDefaults()
+    public function start()
     {
-        return [
-            'log_file' => [self::class, 'getLogFile'],
-            'daemonize' => 1,
-            'max_request' => 2000,
-        ];
+        $callbacks = array_merge([
+            'Start' => [$this, 'onServerStart'],
+            'Shutdown' => [$this, 'onServerShutdown'],
+            'WorkerStart' => [$this, 'onWorkerStart'],
+        ], $this->callbacks);
+        if (isset($this->wrapper_config['swoole_ontask'])) {
+            $callbacks['Task'] = $this->wrapper_config['swoole_ontask'];
+            $callbacks['Finish'] = $this->wrapper_config['swoole_onfinish'];
+        }
+        foreach ($callbacks as $on => $method) {
+            $this->server->on($on, $method);
+        }
+        return $this->server->start();
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     public function onServerStart()
     {
         // put pid
         file_put_contents(
-            $this->config['pid_file'],
+            $this->pid_file,
             $this->getPid()
         );
     }
 
     public function onWorkerStart($serv, $worker_id)
     {
-        // unregister temporary autoloader
-        foreach (spl_autoload_functions() as $function) {
-            spl_autoload_unregister($function);
-        }
-
-        require $this->config['root_dir'] . '/bootstrap/autoload.php';
-        $this->app = $this->getApp();
-
-        $this->kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
-
+        parent::prepareKernel();
+        $server = $this->server;
+        $this->app->singleton('laravoole.server', function ($app) use ($server) {
+            return $server;
+        });
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     public function onServerShutdown($serv)
     {
-        unlink($this->config['pid_file']);
+        @unlink($this->pid_file);
     }
 
     public static function getLogFile()
@@ -112,5 +122,6 @@ class Swoole extends Base implements ServerInterface
     {
         return $this->server->master_pid;
     }
+
 
 }
