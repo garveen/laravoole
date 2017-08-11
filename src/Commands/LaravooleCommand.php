@@ -21,7 +21,7 @@ class LaravooleCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Start laravoole';
+    protected $description = 'Laravoole control utilities';
 
     /**
      * Create a new command instance.
@@ -34,11 +34,21 @@ class LaravooleCommand extends Command
     }
 
     /**
+     * Execute the console command before Laravel < 5.5.
+     * 
+     * @return mixed
+     */
+    public function fire()
+    {
+        $this->handle();
+    }
+
+    /**
      * Execute the console command.
      *
      * @return mixed
      */
-    public function fire()
+    public function handle()
     {
         switch ($action = $this->argument('action')) {
 
