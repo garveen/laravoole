@@ -38,7 +38,7 @@ class LaravooleCommand extends Command
      *
      * @return mixed
      */
-    public function fire()
+    public function handle()
     {
         switch ($action = $this->argument('action')) {
 
