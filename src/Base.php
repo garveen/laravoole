@@ -70,8 +70,8 @@ abstract class Base
             spl_autoload_unregister($function);
         }
 
-        if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-            require __DIR__ . '/../vendor/autoload.php';
+        if (file_exists($this->root_dir . '/vendor/autoload.php')) {
+            require $this->root_dir . '/vendor/autoload.php';
         } else {
             require $this->root_dir . '/bootstrap/autoload.php';
         }
