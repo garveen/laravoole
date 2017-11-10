@@ -52,7 +52,7 @@ class SwooleHttpWrapper extends Swoole implements ServerInterface
         $new_header = [];
         $uc_header = [];
         foreach ($request->header as $key => $value) {
-            $new_header['http_' . $key] = $value;
+            $new_header['http_' . strtr($key, '-', '_')] = $value;
             $uc_header[ucwords($key, '-')] = $value;
         }
         $server = array_merge($request->server, $new_header);
