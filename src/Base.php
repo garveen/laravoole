@@ -72,7 +72,10 @@ abstract class Base
 
         if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
             require __DIR__ . '/../vendor/autoload.php';
-        } else {
+        } elseif (file_exists(__DIR__.'/../../../autoload.php')) {
+            require __DIR__ . '/../../../autoload.php';
+        } elseif (file_exists($this->root_dir . '/bootstrap/autoload.php')) {
+            //as of laravel>=5.5, optimize command has been deprecated
             require $this->root_dir . '/bootstrap/autoload.php';
         }
         if (isset($this->base_config['callbacks']['bootstraping'])) {

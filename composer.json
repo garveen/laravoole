@@ -34,5 +34,12 @@
             "Laravoole\\": "src/",
             "Laravoole\\Test\\": "tests/"
         }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Laravoole\\LaravooleServiceProvider"
+            ]
+        }
     }
 }
