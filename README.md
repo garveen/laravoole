@@ -268,9 +268,8 @@ server {
     root /path/to/laravel/public;
 
     location / {
-            try_files $uri $uri/ @laravoole;
-            index  index.html index.htm index.php;
-        }
+        try_files $uri @laravoole;
+    }
 
     # http
     location @laravoole {
